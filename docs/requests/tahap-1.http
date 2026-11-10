@@ -1,0 +1,94 @@
+### Contoh request Tahap 1 (Sites, Categories, Inventories)
+### Bisa dijalankan langsung di VS Code dengan extension "REST Client" (humao.rest-client):
+### klik "Send Request" di atas tiap request.
+
+@baseUrl = http://localhost:5050/api
+
+### 1. Login sebagai admin (salin "token" dari respons ke variabel di bawah)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "admin123" }
+
+###
+@token = TEMPEL_TOKEN_DI_SINI
+
+### ---------- SITES ----------
+POST {{baseUrl}}/sites
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Site Jakarta" }
+
+###
+GET {{baseUrl}}/sites
+Authorization: Bearer {{token}}
+
+###
+GET {{baseUrl}}/sites/1
+Authorization: Bearer {{token}}
+
+###
+PUT {{baseUrl}}/sites/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Site Jakarta Utara" }
+
+### ---------- CATEGORIES ----------
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "APD" }
+
+###
+GET {{baseUrl}}/categories?search=ap
+Authorization: Bearer {{token}}
+
+### ---------- INVENTORIES ----------
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Sarung Tangan Safety",
+  "unit": "pcs",
+  "description": "Sarung tangan kain untuk pekerjaan umum",
+  "category_id": 1
+}
+
+###
+GET {{baseUrl}}/inventories?search=sarung&page=1&limit=10
+Authorization: Bearer {{token}}
+
+###
+GET {{baseUrl}}/inventories/1
+Authorization: Bearer {{token}}
+
+###
+PUT {{baseUrl}}/inventories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Sarung Tangan Safety",
+  "unit": "pasang",
+  "description": null,
+  "category_id": 1
+}
+
+### ---------- Uji error yang diharapkan ----------
+### Kategori masih dipakai barang → 409
+DELETE {{baseUrl}}/categories/1
+Authorization: Bearer {{token}}
+
+### category_id tidak ada → 400
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Uji", "unit": "pcs", "category_id": 999 }
+
+### Tanpa token → 401
+GET {{baseUrl}}/categories
