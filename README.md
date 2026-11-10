@@ -58,10 +58,10 @@ cp .env.example .env      # sesuaikan kredensial database & JWT_SECRET
 npm install
 npm run migrate           # buat tabel dari migrations/
 npm run seed              # buat akun admin awal
-npm run dev               # http://localhost:5000/api
+npm run dev               # http://localhost:5050/api
 ```
 
-Cek: `GET http://localhost:5000/api/health`
+Cek: `GET http://localhost:5050/api/health`
 
 ### 3. Frontend
 ```bash
@@ -70,7 +70,7 @@ npm install
 npm run dev               # http://localhost:5173
 ```
 
-Saat development, Vite meneruskan request `/api` ke backend di port 5000.
+Saat development, Vite meneruskan request `/api` ke backend di port 5050.
 
 ## Skema database
 

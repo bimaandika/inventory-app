@@ -7,8 +7,8 @@ export default defineConfig({
     port: 5173,
     // Request ke /api dan /uploads diteruskan ke backend Express saat development
     proxy: {
-      '/api': 'http://localhost:5000',
-      '/uploads': 'http://localhost:5000',
+      '/api': 'http://localhost:5050',
+      '/uploads': 'http://localhost:5050',
     },
   },
 });
