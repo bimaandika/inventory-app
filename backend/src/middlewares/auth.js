@@ -8,7 +8,6 @@ import { unauthorized, forbidden } from '../utils/httpError.js';
 export function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
   const [scheme, token] = header.split(' ');
-
   if (scheme !== 'Bearer' || !token) {
     return next(unauthorized('Token tidak ditemukan'));
   }

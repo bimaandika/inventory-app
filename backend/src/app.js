@@ -10,6 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+app.use(express.urlencoded({ extended: false }))
 app.use(express.json());
 
 // Foto kondisi barang (stocks.image) disajikan dari folder uploads/
