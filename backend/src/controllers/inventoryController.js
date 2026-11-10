@@ -2,8 +2,22 @@ import { query } from '../config/db.js';
 import { badRequest, notFound } from '../utils/httpError.js';
 import { parseId, requireString, optionalString, parsePagination } from '../utils/validate.js';
 
+const INVENTORY_TYPES = ['CONSUMABLE', 'NON_CONSUMABLE'];
+
+function parseType(value, { required = true } = {}) {
+  if (value === undefined || value === null || value === '') {
+    if (required) throw badRequest(`type wajib diisi (${INVENTORY_TYPES.join(' / ')})`);
+    return null;
+  }
+  const type = String(value).trim().toUpperCase();
+  if (!INVENTORY_TYPES.includes(type)) {
+    throw badRequest(`type harus salah satu dari: ${INVENTORY_TYPES.join(', ')}`);
+  }
+  return type;
+}
+
 const SELECT_INVENTORY = `
-  SELECT i.id, i.name, i.unit, i.description, i.category_id,
+  SELECT i.id, i.name, i.unit, i.type, i.description, i.category_id,
          c.name AS category_name, i.created_at, i.updated_at
     FROM inventories i
     JOIN categories c ON c.id = i.category_id`;
@@ -17,26 +31,29 @@ function readBody(body) {
   return {
     name: requireString(body, 'name', { max: 150 }),
     unit: requireString(body, 'unit', { max: 30 }),
+    type: parseType(body?.type),
     description: optionalString(body, 'description'),
     category_id: parseId(body?.category_id, 'category_id'),
   };
 }
 
-/** GET /api/inventories?category_id=&search=&page=&limit= */
+/** GET /api/inventories?category_id=&type=&search=&page=&limit= */
 export async function list(req, res) {
   const { page, limit, offset } = parsePagination(req.query);
   const search = (req.query.search || '').trim();
   const categoryId = req.query.category_id ? parseId(req.query.category_id, 'category_id') : null;
+  const type = parseType(req.query.type, { required: false });
 
   const where = `
     WHERE ($1 = '' OR i.name ILIKE '%' || $1 || '%')
-      AND ($2::int IS NULL OR i.category_id = $2)`;
+      AND ($2::int IS NULL OR i.category_id = $2)
+      AND ($3::inventory_type IS NULL OR i.type = $3::inventory_type)`;
 
   const [items, count] = await Promise.all([
-    query(`${SELECT_INVENTORY} ${where} ORDER BY i.name LIMIT $3 OFFSET $4`, [
-      search, categoryId, limit, offset,
+    query(`${SELECT_INVENTORY} ${where} ORDER BY i.name LIMIT $4 OFFSET $5`, [
+      search, categoryId, type, limit, offset,
     ]),
-    query(`SELECT COUNT(*)::int AS total FROM inventories i ${where}`, [search, categoryId]),
+    query(`SELECT COUNT(*)::int AS total FROM inventories i ${where}`, [search, categoryId, type]),
   ]);
 
   const total = count.rows[0].total;
@@ -75,9 +92,9 @@ export async function create(req, res) {
   await ensureCategoryExists(data.category_id);
 
   const { rows } = await query(
-    `INSERT INTO inventories (name, unit, description, category_id)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
-    [data.name, data.unit, data.description, data.category_id],
+    `INSERT INTO inventories (name, unit, type, description, category_id)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [data.name, data.unit, data.type, data.description, data.category_id],
   );
   const created = await query(`${SELECT_INVENTORY} WHERE i.id = $1`, [rows[0].id]);
   res.status(201).json({ message: 'Barang berhasil dibuat', data: created.rows[0] });
@@ -91,9 +108,9 @@ export async function update(req, res) {
 
   const { rowCount } = await query(
     `UPDATE inventories
-        SET name = $1, unit = $2, description = $3, category_id = $4
-      WHERE id = $5`,
-    [data.name, data.unit, data.description, data.category_id, id],
+        SET name = $1, unit = $2, type = $3, description = $4, category_id = $5
+      WHERE id = $6`,
+    [data.name, data.unit, data.type, data.description, data.category_id, id],
   );
   if (!rowCount) throw notFound('Barang tidak ditemukan');
 

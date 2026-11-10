@@ -54,12 +54,17 @@ Content-Type: application/json
 {
   "name": "Sarung Tangan Safety",
   "unit": "pcs",
+  "type": "CONSUMABLE",
   "description": "Sarung tangan kain untuk pekerjaan umum",
   "category_id": 1
 }
 
 ###
 GET {{baseUrl}}/inventories?search=sarung&page=1&limit=10
+Authorization: Bearer {{token}}
+
+### Filter berdasarkan jenis barang
+GET {{baseUrl}}/inventories?type=NON_CONSUMABLE
 Authorization: Bearer {{token}}
 
 ###
@@ -74,6 +79,7 @@ Content-Type: application/json
 {
   "name": "Sarung Tangan Safety",
   "unit": "pasang",
+  "type": "CONSUMABLE",
   "description": null,
   "category_id": 1
 }
@@ -88,7 +94,14 @@ POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Uji", "unit": "pcs", "category_id": 999 }
+{ "name": "Uji", "unit": "pcs", "type": "CONSUMABLE", "category_id": 999 }
+
+### type tidak valid → 400
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Uji", "unit": "pcs", "type": "SEKALI_PAKAI", "category_id": 1 }
 
 ### Tanpa token → 401
 GET {{baseUrl}}/categories

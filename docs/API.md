@@ -31,9 +31,11 @@ Keterangan role: **semua** = admin & crew, **admin** = hanya admin, **crew** = p
 ## Inventories (master barang)
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
-| GET | `/inventories?category_id=&search=` | semua | Katalog |
+| GET | `/inventories?category_id=&type=&search=` | semua | Katalog |
 | GET | `/inventories/:id` | semua | Detail + stok per site |
-| POST / PUT / DELETE | `/inventories/:id` | admin | |
+| POST / PUT / DELETE | `/inventories/:id` | admin | Body: `name`, `unit`, `type`, `description`, `category_id` |
+
+`type`: `CONSUMABLE` (habis pakai) atau `NON_CONSUMABLE` (tidak habis pakai).
 
 ## Stocks
 | Method | Endpoint | Role | Keterangan |
