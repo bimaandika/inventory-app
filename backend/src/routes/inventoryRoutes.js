@@ -9,6 +9,7 @@ router.use(authenticate);
 
 // Admin & crew
 router.get('/', asyncHandler(ctrl.list));
+router.get('/sku/:sku', asyncHandler(ctrl.findBySku)); // harus di atas '/:id'
 router.get('/:id', asyncHandler(ctrl.detail));
 
 // Admin saja

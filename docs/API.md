@@ -28,33 +28,34 @@ Keterangan role: **semua** = admin & crew, **admin** = hanya admin, **crew** = p
 | GET | `/sites/:id`, `/categories/:id` | semua |
 | POST / PUT / DELETE | `/sites/:id`, `/categories/:id` | admin |
 
-## Inventories (master barang)
+## Inventories (barang per site)
+Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan sebagai dua baris dengan SKU berbeda.
+
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
-| GET | `/inventories?category_id=&type=&search=` | semua | Katalog |
-| GET | `/inventories/:id` | semua | Detail + stok per site |
-| POST / PUT / DELETE | `/inventories/:id` | admin | Body: `name`, `unit`, `type`, `description`, `category_id` |
+| GET | `/inventories?search=&category_id=&type=&site_id=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri |
+| GET | `/inventories/:id` | semua | Crew hanya untuk site sendiri |
+| GET | `/inventories/sku/:sku` | semua | Scan SKU |
+| POST | `/inventories` | admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `sku`, `quantity` (stok awal, opsional) |
+| PUT | `/inventories/:id` | admin | Body sama seperti POST **tanpa** `quantity` |
+| PATCH | `/inventories/:id/image` | admin | *(Tahap 2)* Upload foto kondisi barang |
+| DELETE | `/inventories/:id` | admin | |
 
-`type`: `CONSUMABLE` (habis pakai) atau `NON_CONSUMABLE` (tidak habis pakai).
+- `type`: `CONSUMABLE` (habis pakai) atau `NON_CONSUMABLE` (tidak habis pakai, misal tools).
+- `sku` unik di seluruh sistem dan disimpan dalam huruf besar.
+- Nama barang unik per site (tidak peka huruf besar/kecil).
+- `quantity` hanya diisi saat barang dibuat; perubahan berikutnya lewat stock movement.
 
-## Stocks
-| Method | Endpoint | Role | Keterangan |
-|---|---|---|---|
-| GET | `/stocks?site_id=&category_id=&search=&low_stock=true` | semua | Crew dipaksa ke site sendiri |
-| GET | `/stocks/:id` | semua | |
-| GET | `/stocks/sku/:sku` | semua | Scan SKU |
-| POST | `/stocks` | admin | multipart, dengan foto kondisi |
-| PUT | `/stocks/:id` | admin | Ubah SKU (bukan quantity) |
-| PATCH | `/stocks/:id/image` | admin | Ganti foto kondisi |
-| DELETE | `/stocks/:id` | admin | |
-
-`quantity` hanya berubah lewat stock movement.
+### Aturan barang NON_CONSUMABLE
+- Semua pergerakan (barang masuk, rusak/hilang, dipinjam site lain) dicatat oleh **admin**.
+- Dipinjam site lain **tidak memindahkan kepemilikan**; site peminjam ditulis di `remarks`.
+- Crew **tidak bisa** meminta NON_CONSUMABLE lewat cart; crew hanya bisa melihat ketersediaannya.
 
 ## Cart
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/cart` | Isi cart sendiri (`in_cart`) |
-| POST | `/cart` | `{ id_stock, quantity }` |
+| POST | `/cart` | `{ id_inventory, quantity }` (hanya barang CONSUMABLE di site sendiri) |
 | PATCH | `/cart/:id` | Ubah quantity |
 | DELETE | `/cart/:id` | Hapus item |
 | DELETE | `/cart` | Kosongkan |

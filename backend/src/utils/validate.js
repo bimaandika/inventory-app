@@ -25,6 +25,14 @@ export function optionalString(body, field, { max = 5000 } = {}) {
   return value || null;
 }
 
+/** Bilangan bulat >= 0 (misalnya quantity). Kosong → defaultValue. */
+export function parseNonNegativeInt(value, label, defaultValue = 0) {
+  if (value === undefined || value === null || value === '') return defaultValue;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 0) throw badRequest(`${label} harus bilangan bulat >= 0`);
+  return n;
+}
+
 /**
  * Pagination dari query string: ?page=1&limit=20
  * Batas limit 100 supaya query tidak terlalu berat.

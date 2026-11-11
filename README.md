@@ -74,7 +74,9 @@ Saat development, Vite meneruskan request `/api` ke backend di port 5050.
 
 ## Skema database
 
-Lihat `backend/migrations/001_init.sql`. Tabel: `sites`, `users`, `categories`, `inventories`, `stocks`, `stock_movements`, `inventory_carts`, `histories`.
+Lihat `backend/migrations/001_init.sql`. Tabel: `sites`, `users`, `categories`, `inventories`, `stock_movements`, `inventory_carts`, `histories`.
+
+Migrasi dijalankan berurutan (`001` → `002` → `003` …). Sejak `003`, tabel `stocks` digabung ke `inventories`: satu baris = satu barang di satu site.
 
 Alur permintaan barang:
 

@@ -1,3 +1,11 @@
+/** Pesan yang lebih jelas untuk constraint UNIQUE tertentu. */
+const UNIQUE_MESSAGES = {
+  users_username_key: 'Username sudah dipakai',
+  categories_name_key: 'Nama kategori sudah ada',
+  inventories_sku_unique: 'SKU sudah dipakai barang lain',
+  inventories_site_name_unique: 'Barang dengan nama ini sudah ada di site tersebut',
+};
+
 /** 404 untuk route yang tidak terdaftar. */
 export function notFoundHandler(req, res) {
   res.status(404).json({ message: `Route ${req.method} ${req.originalUrl} tidak ditemukan` });
@@ -8,7 +16,10 @@ export function notFoundHandler(req, res) {
 export function errorHandler(err, req, res, next) {
   // Pelanggaran constraint PostgreSQL
   if (err.code === '23505') {
-    return res.status(409).json({ message: 'Data sudah ada (duplikat)', detail: err.detail });
+    return res.status(409).json({
+      message: UNIQUE_MESSAGES[err.constraint] || 'Data sudah ada (duplikat)',
+      detail: err.detail,
+    });
   }
   if (err.code === '23503') {
     // Hapus data yang masih dipakai → 409, referensi ke data yang tidak ada → 400

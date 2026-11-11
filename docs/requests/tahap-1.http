@@ -1,4 +1,5 @@
 ### Contoh request Tahap 1 (Sites, Categories, Inventories)
+### Setelah migrasi 003: inventories = barang per site (site_id, sku, quantity).
 ### Bisa dijalankan langsung di VS Code dengan extension "REST Client" (humao.rest-client):
 ### klik "Send Request" di atas tiap request.
 
@@ -56,11 +57,29 @@ Content-Type: application/json
   "unit": "pcs",
   "type": "CONSUMABLE",
   "description": "Sarung tangan kain untuk pekerjaan umum",
-  "category_id": 1
+  "category_id": 1,
+  "site_id": 1,
+  "sku": "JKT-GLV-001",
+  "quantity": 50
+}
+
+### Barang yang sama di site lain = baris baru dengan SKU berbeda
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Sarung Tangan Safety",
+  "unit": "pcs",
+  "type": "CONSUMABLE",
+  "category_id": 1,
+  "site_id": 2,
+  "sku": "SBY-GLV-001",
+  "quantity": 20
 }
 
 ###
-GET {{baseUrl}}/inventories?search=sarung&page=1&limit=10
+GET {{baseUrl}}/inventories?search=sarung&site_id=1&page=1&limit=10
 Authorization: Bearer {{token}}
 
 ### Filter berdasarkan jenis barang
@@ -69,6 +88,10 @@ Authorization: Bearer {{token}}
 
 ###
 GET {{baseUrl}}/inventories/1
+Authorization: Bearer {{token}}
+
+### Cari lewat SKU (huruf kecil juga bisa)
+GET {{baseUrl}}/inventories/sku/jkt-glv-001
 Authorization: Bearer {{token}}
 
 ###
@@ -81,7 +104,9 @@ Content-Type: application/json
   "unit": "pasang",
   "type": "CONSUMABLE",
   "description": null,
-  "category_id": 1
+  "category_id": 1,
+  "site_id": 1,
+  "sku": "JKT-GLV-001"
 }
 
 ### ---------- Uji error yang diharapkan ----------
@@ -94,14 +119,28 @@ POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Uji", "unit": "pcs", "type": "CONSUMABLE", "category_id": 999 }
+{ "name": "Uji", "unit": "pcs", "type": "CONSUMABLE", "category_id": 999, "site_id": 1, "sku": "UJI-1" }
 
 ### type tidak valid → 400
 POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Uji", "unit": "pcs", "type": "SEKALI_PAKAI", "category_id": 1 }
+{ "name": "Uji", "unit": "pcs", "type": "SEKALI_PAKAI", "category_id": 1, "site_id": 1, "sku": "UJI-2" }
+
+### SKU sudah dipakai → 409
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Masker", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "sku": "JKT-GLV-001" }
+
+### Ubah quantity lewat PUT → 400 (harus lewat stock movement)
+PUT {{baseUrl}}/inventories/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Sarung Tangan Safety", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "sku": "JKT-GLV-001", "quantity": 999 }
 
 ### Tanpa token → 401
 GET {{baseUrl}}/categories

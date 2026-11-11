@@ -25,7 +25,7 @@ export async function detail(req, res) {
   const { rows } = await query(
     `SELECT s.id, s.name, s.created_at, s.updated_at,
             (SELECT COUNT(*)::int FROM users  u  WHERE u.site_id  = s.id) AS total_users,
-            (SELECT COUNT(*)::int FROM stocks st WHERE st.site_id = s.id) AS total_stocks
+            (SELECT COUNT(*)::int FROM inventories i WHERE i.site_id = s.id) AS total_items
        FROM sites s
       WHERE s.id = $1`,
     [id],
@@ -56,7 +56,7 @@ export async function update(req, res) {
   res.json({ message: 'Site berhasil diperbarui', data: rows[0] });
 }
 
-/** DELETE /api/sites/:id (admin) — gagal (409) jika site masih punya user atau stok. */
+/** DELETE /api/sites/:id (admin) — gagal (409) jika site masih punya user atau barang. */
 export async function remove(req, res) {
   const id = parseId(req.params.id);
   const { rowCount } = await query('DELETE FROM sites WHERE id = $1', [id]);
