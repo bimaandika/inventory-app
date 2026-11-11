@@ -52,16 +52,18 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 - Nama barang unik per site (tidak peka huruf besar/kecil).
 - `quantity` hanya diisi saat barang dibuat; perubahan berikutnya lewat stock movement.
 
-### Aturan barang NON_CONSUMABLE
-- Semua pergerakan (barang masuk, rusak/hilang, dipinjam site lain) dicatat oleh **admin**.
-- Dipinjam site lain **tidak memindahkan kepemilikan**; site peminjam ditulis di `remarks`.
-- Crew **tidak bisa** meminta NON_CONSUMABLE lewat cart; crew hanya bisa melihat ketersediaannya.
+### Alur kerja
+Aturan bisnis per case ada di folder `docs/workflow/`:
+- Case 1 — Pengambilan & pengembalian: `docs/workflow/case-1-pengambilan-pengembalian.md`
+  (consumable dan non-consumable bisa diminta dalam satu keranjang; non-consumable dikembalikan, sisa consumable dilaporkan)
+
+> Endpoint Cart dan Stock movements di bawah masih rancangan awal dan akan disesuaikan dengan dokumen workflow.
 
 ## Cart
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/cart` | Isi cart sendiri (`in_cart`) |
-| POST | `/cart` | `{ id_inventory, quantity }` (hanya barang CONSUMABLE di site sendiri) |
+| POST | `/cart` | `{ id_inventory, quantity }` (barang di site sendiri) |
 | PATCH | `/cart/:id` | Ubah quantity |
 | DELETE | `/cart/:id` | Hapus item |
 | DELETE | `/cart` | Kosongkan |
