@@ -2,6 +2,7 @@
 const UNIQUE_MESSAGES = {
   users_username_key: 'Username sudah dipakai',
   categories_name_key: 'Nama kategori sudah ada',
+  sites_code_unique: 'Kode site sudah dipakai site lain',
   inventories_sku_unique: 'SKU sudah dipakai barang lain',
   inventories_site_name_unique: 'Barang dengan nama ini sudah ada di site tersebut',
 };

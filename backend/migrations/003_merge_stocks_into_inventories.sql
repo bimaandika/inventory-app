@@ -21,7 +21,7 @@ ALTER TABLE inventories
   ADD COLUMN quantity INT NOT NULL DEFAULT 0 CHECK (quantity >= 0);
 
 -- Pemetaan stocks.id lama -> inventories.id baru (untuk inventory_carts)
-CREATE TEMP TABLE stock_map (stock_id INT PRIMARY KEY, inventory_id INT NOT NULL) ON COMMIT DROP;
+CREATE TEMP TABLE stock_map (stock_id INT PRIMARY KEY, inventory_id INT NOT NULL);
 
 -- 2. Stok pertama tiap barang digabung ke baris barang itu sendiri
 INSERT INTO stock_map (stock_id, inventory_id)
@@ -100,3 +100,4 @@ CREATE INDEX idx_inventories_site ON inventories(site_id);
 
 -- 7. Tabel stocks tidak dipakai lagi
 DROP TABLE stocks;
+DROP TABLE stock_map;

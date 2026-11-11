@@ -1,13 +1,23 @@
 /**
- * Membuat akun admin awal dari ADMIN_USERNAME / ADMIN_PASSWORD di .env.
- * Aman dijalankan berulang (tidak membuat duplikat).
+ * Data awal:
+ * - Akun admin dari ADMIN_USERNAME / ADMIN_PASSWORD di .env
+ * - Daftar site beserta kodenya (dipakai di SKU: MEGS-<kode>-ET-001)
  *
+ * Aman dijalankan berulang (tidak membuat duplikat).
  * Pemakaian: npm run seed
  */
 import bcrypt from 'bcryptjs';
 import pool from '../src/config/db.js';
 
-async function run() {
+const SITES = [
+  { name: 'Gunung Megang', code: 'GMG' },
+  { name: 'POMS Rimau', code: 'POMS' },
+  { name: 'GEG Rimau', code: 'GEG' },
+  { name: 'FOL', code: 'FOL' },
+  { name: 'Genset Tarakan', code: 'TRK' },
+];
+
+async function seedAdmin() {
   const username = process.env.ADMIN_USERNAME || 'admin';
   const password = process.env.ADMIN_PASSWORD || 'admin123';
   const hash = await bcrypt.hash(password, 10);
@@ -18,8 +28,25 @@ async function run() {
      ON CONFLICT (username) DO NOTHING`,
     [username, hash],
   );
-
   console.log(rowCount ? `✔ Admin "${username}" dibuat` : `• Admin "${username}" sudah ada`);
+}
+
+async function seedSites() {
+  for (const site of SITES) {
+    const { rowCount } = await pool.query(
+      `INSERT INTO sites (name, code) VALUES ($1, $2)
+       ON CONFLICT (code) DO NOTHING`,
+      [site.name, site.code],
+    );
+    console.log(
+      rowCount ? `✔ Site ${site.code} - ${site.name} dibuat` : `• Site ${site.code} sudah ada`,
+    );
+  }
+}
+
+async function run() {
+  await seedAdmin();
+  await seedSites();
   await pool.end();
 }
 

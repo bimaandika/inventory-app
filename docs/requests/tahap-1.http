@@ -15,11 +15,12 @@ Content-Type: application/json
 @token = TEMPEL_TOKEN_DI_SINI
 
 ### ---------- SITES ----------
+### (5 site utama sudah dibuat oleh `npm run seed`)
 POST {{baseUrl}}/sites
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Site Jakarta" }
+{ "name": "Site Contoh", "code": "CTH" }
 
 ###
 GET {{baseUrl}}/sites
@@ -34,7 +35,7 @@ PUT {{baseUrl}}/sites/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Site Jakarta Utara" }
+{ "name": "Gunung Megang", "code": "GMG" }
 
 ### ---------- CATEGORIES ----------
 POST {{baseUrl}}/categories
@@ -59,11 +60,10 @@ Content-Type: application/json
   "description": "Sarung tangan kain untuk pekerjaan umum",
   "category_id": 1,
   "site_id": 1,
-  "sku": "JKT-GLV-001",
   "quantity": 50
 }
 
-### Barang yang sama di site lain = baris baru dengan SKU berbeda
+### Barang yang sama di site lain = baris baru, SKU otomatis berbeda (MEGS-POMS-SM-001)
 POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -74,7 +74,6 @@ Content-Type: application/json
   "type": "CONSUMABLE",
   "category_id": 1,
   "site_id": 2,
-  "sku": "SBY-GLV-001",
   "quantity": 20
 }
 
@@ -91,7 +90,7 @@ GET {{baseUrl}}/inventories/1
 Authorization: Bearer {{token}}
 
 ### Cari lewat SKU (huruf kecil juga bisa)
-GET {{baseUrl}}/inventories/sku/jkt-glv-001
+GET {{baseUrl}}/inventories/sku/megs-gmg-sm-001
 Authorization: Bearer {{token}}
 
 ###
@@ -105,8 +104,7 @@ Content-Type: application/json
   "type": "CONSUMABLE",
   "description": null,
   "category_id": 1,
-  "site_id": 1,
-  "sku": "JKT-GLV-001"
+  "site_id": 1
 }
 
 ### ---------- Uji error yang diharapkan ----------
@@ -119,28 +117,35 @@ POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Uji", "unit": "pcs", "type": "CONSUMABLE", "category_id": 999, "site_id": 1, "sku": "UJI-1" }
+{ "name": "Uji", "unit": "pcs", "type": "CONSUMABLE", "category_id": 999, "site_id": 1 }
 
 ### type tidak valid → 400
 POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Uji", "unit": "pcs", "type": "SEKALI_PAKAI", "category_id": 1, "site_id": 1, "sku": "UJI-2" }
+{ "name": "Uji", "unit": "pcs", "type": "SEKALI_PAKAI", "category_id": 1, "site_id": 1 }
 
-### SKU sudah dipakai → 409
+### Nama barang sudah ada di site yang sama → 409
 POST {{baseUrl}}/inventories
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Masker", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "sku": "JKT-GLV-001" }
+{ "name": "sarung tangan safety", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1 }
+
+### Mengirim sku manual → 400 (SKU dibuat otomatis)
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Masker", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "sku": "ABC-1" }
 
 ### Ubah quantity lewat PUT → 400 (harus lewat stock movement)
 PUT {{baseUrl}}/inventories/1
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "name": "Sarung Tangan Safety", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "sku": "JKT-GLV-001", "quantity": 999 }
+{ "name": "Sarung Tangan Safety", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1, "quantity": 999 }
 
 ### Tanpa token → 401
 GET {{baseUrl}}/categories

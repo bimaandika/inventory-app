@@ -57,7 +57,7 @@ cd backend
 cp .env.example .env      # sesuaikan kredensial database & JWT_SECRET
 npm install
 npm run migrate           # buat tabel dari migrations/
-npm run seed              # buat akun admin awal
+npm run seed              # buat akun admin awal + 5 site (GMG, POMS, GEG, FOL, TRK)
 npm run dev               # http://localhost:5050/api
 ```
 
@@ -76,7 +76,7 @@ Saat development, Vite meneruskan request `/api` ke backend di port 5050.
 
 Lihat `backend/migrations/001_init.sql`. Tabel: `sites`, `users`, `categories`, `inventories`, `stock_movements`, `inventory_carts`, `histories`.
 
-Migrasi dijalankan berurutan (`001` → `002` → `003` …). Sejak `003`, tabel `stocks` digabung ke `inventories`: satu baris = satu barang di satu site.
+Migrasi dijalankan berurutan (`001` → `002` → `003` …). Sejak `003`, tabel `stocks` digabung ke `inventories`: satu baris = satu barang di satu site. Sejak `004`, SKU dibuat otomatis dengan format `MEGS-<kode site>-<ET|SM>-<nomor>`.
 
 Alur permintaan barang:
 

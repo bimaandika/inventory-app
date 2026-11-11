@@ -1,5 +1,6 @@
-import { query } from '../config/db.js';
+import { query, withTransaction } from '../config/db.js';
 import { badRequest, notFound, forbidden } from '../utils/httpError.js';
+import { generateSku } from '../services/skuService.js';
 import {
   parseId,
   requireString,
@@ -13,6 +14,8 @@ import {
  * Kolom: name, unit, type, description, category_id, site_id, sku, image, quantity.
  *
  * Aturan:
+ * - SKU dibuat otomatis (lihat services/skuService.js), tidak bisa diisi manual.
+ *   Jika site atau type barang diubah, SKU dibuat ulang mengikuti site/type baru.
  * - quantity hanya bisa diisi saat barang dibuat (stok awal).
  *   Perubahan setelahnya lewat stock movement, supaya ada jejak auditnya.
  * - Crew hanya bisa melihat barang di site-nya sendiri.
@@ -49,6 +52,9 @@ async function ensureExists(table, id, label) {
 
 /** Field yang sama untuk create & update. */
 function readBody(body) {
+  if (body?.sku !== undefined) {
+    throw badRequest('sku dibuat otomatis oleh sistem, tidak perlu dikirim');
+  }
   return {
     name: requireString(body, 'name', { max: 150 }),
     unit: requireString(body, 'unit', { max: 30 }),
@@ -56,7 +62,6 @@ function readBody(body) {
     description: optionalString(body, 'description'),
     category_id: parseId(body?.category_id, 'category_id'),
     site_id: parseId(body?.site_id, 'site_id'),
-    sku: requireString(body, 'sku', { max: 50 }).toUpperCase(),
   };
 }
 
@@ -130,14 +135,19 @@ export async function create(req, res) {
   await ensureExists('categories', data.category_id, 'category_id');
   await ensureExists('sites', data.site_id, 'site_id');
 
-  const { rows } = await query(
-    `INSERT INTO inventories
-       (name, unit, type, description, category_id, site_id, sku, quantity)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-     RETURNING id`,
-    [data.name, data.unit, data.type, data.description, data.category_id, data.site_id, data.sku, quantity],
-  );
-  const created = await query(`${SELECT_INVENTORY} WHERE i.id = $1`, [rows[0].id]);
+  const id = await withTransaction(async (client) => {
+    const sku = await generateSku(client, data.site_id, data.type);
+    const { rows } = await client.query(
+      `INSERT INTO inventories
+         (name, unit, type, description, category_id, site_id, sku, quantity)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id`,
+      [data.name, data.unit, data.type, data.description, data.category_id, data.site_id, sku, quantity],
+    );
+    return rows[0].id;
+  });
+
+  const created = await query(`${SELECT_INVENTORY} WHERE i.id = $1`, [id]);
   res.status(201).json({ message: 'Barang berhasil dibuat', data: created.rows[0] });
 }
 
@@ -151,14 +161,28 @@ export async function update(req, res) {
   await ensureExists('categories', data.category_id, 'category_id');
   await ensureExists('sites', data.site_id, 'site_id');
 
-  const { rowCount } = await query(
-    `UPDATE inventories
-        SET name = $1, unit = $2, type = $3, description = $4,
-            category_id = $5, site_id = $6, sku = $7
-      WHERE id = $8`,
-    [data.name, data.unit, data.type, data.description, data.category_id, data.site_id, data.sku, id],
-  );
-  if (!rowCount) throw notFound('Barang tidak ditemukan');
+  await withTransaction(async (client) => {
+    const current = await client.query(
+      'SELECT site_id, type, sku FROM inventories WHERE id = $1 FOR UPDATE',
+      [id],
+    );
+    if (!current.rows[0]) throw notFound('Barang tidak ditemukan');
+
+    // SKU memuat kode site & jenis, jadi dibuat ulang jika salah satunya berubah
+    const { site_id: oldSite, type: oldType, sku: oldSku } = current.rows[0];
+    const sku =
+      oldSite !== data.site_id || oldType !== data.type
+        ? await generateSku(client, data.site_id, data.type)
+        : oldSku;
+
+    await client.query(
+      `UPDATE inventories
+          SET name = $1, unit = $2, type = $3, description = $4,
+              category_id = $5, site_id = $6, sku = $7
+        WHERE id = $8`,
+      [data.name, data.unit, data.type, data.description, data.category_id, data.site_id, sku, id],
+    );
+  });
 
   const updated = await query(`${SELECT_INVENTORY} WHERE i.id = $1`, [id]);
   res.json({ message: 'Barang berhasil diperbarui', data: updated.rows[0] });

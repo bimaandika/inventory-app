@@ -28,6 +28,8 @@ Keterangan role: **semua** = admin & crew, **admin** = hanya admin, **crew** = p
 | GET | `/sites/:id`, `/categories/:id` | semua |
 | POST / PUT / DELETE | `/sites/:id`, `/categories/:id` | admin |
 
+Body site: `{ name, code }`. `code` (huruf besar/angka, maks 10, unik) dipakai di SKU dan **tidak bisa diubah** jika site sudah punya barang.
+
 ## Inventories (barang per site)
 Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan sebagai dua baris dengan SKU berbeda.
 
@@ -36,13 +38,17 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 | GET | `/inventories?search=&category_id=&type=&site_id=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri |
 | GET | `/inventories/:id` | semua | Crew hanya untuk site sendiri |
 | GET | `/inventories/sku/:sku` | semua | Scan SKU |
-| POST | `/inventories` | admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `sku`, `quantity` (stok awal, opsional) |
+| POST | `/inventories` | admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `quantity` (stok awal, opsional). SKU dibuat otomatis |
 | PUT | `/inventories/:id` | admin | Body sama seperti POST **tanpa** `quantity` |
 | PATCH | `/inventories/:id/image` | admin | *(Tahap 2)* Upload foto kondisi barang |
 | DELETE | `/inventories/:id` | admin | |
 
 - `type`: `CONSUMABLE` (habis pakai) atau `NON_CONSUMABLE` (tidak habis pakai, misal tools).
-- `sku` unik di seluruh sistem dan disimpan dalam huruf besar.
+- **SKU otomatis**: `MEGS-<kode site>-<kode jenis>-<nomor urut>`, contoh `MEGS-GMG-ET-001`.
+  - Kode jenis: `NON_CONSUMABLE` = `ET`, `CONSUMABLE` = `SM`.
+  - Nomor urut per site per jenis, minimal 3 digit; nomor yang pernah dipakai tidak dipakai ulang.
+  - Jika `site_id` atau `type` barang diubah, SKU dibuat ulang mengikuti site/jenis baru.
+  - Mengirim `sku` di body akan ditolak (400).
 - Nama barang unik per site (tidak peka huruf besar/kecil).
 - `quantity` hanya diisi saat barang dibuat; perubahan berikutnya lewat stock movement.
 
