@@ -25,6 +25,8 @@ Setiap site punya admin site masing-masing. Admin pusat dibutuhkan, misalnya saa
 | **Case 2** — barang masuk | ✅ | ✅ site sendiri | ❌ |
 | **Case 3** — kirim transfer | ✅ | ✅ dari site sendiri | ❌ |
 | **Case 3** — terima transfer | ✅ (boleh transfer yang dikirimnya sendiri) | ✅ ke site sendiri | ❌ |
+| **Case 3b** — kirim peminjaman & terima kembali | ✅ | ✅ sebagai site pemilik | ❌ |
+| **Case 3b** — terima pinjaman & kembalikan | ✅ | ✅ sebagai site peminjam | ❌ |
 | **Case 4** — adjustment & stock opname | *(dibahas di Case 4)* | *(dibahas di Case 4)* | ❌ |
 
 ## Catatan

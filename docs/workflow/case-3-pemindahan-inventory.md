@@ -8,7 +8,7 @@
 
 Barang dipindahkan **secara permanen** dari satu site ke site lain (kepemilikan berpindah).
 Prosesnya **dua langkah**: **Kirim** di site asal → **Terima** di site tujuan.
-Peminjaman antar site (barang kembali lagi) **belum didukung**; jika barang perlu kembali, buat transfer balik.
+Untuk peminjaman (barang kembali lagi), lihat [Case 3b — Peminjaman antar site](case-3b-peminjaman-antar-site.md).
 
 ## Alur
 
@@ -36,7 +36,7 @@ Admin site asal / pusat           Site asal (GMG)     Site tujuan (TRK)     Admi
 ## Aturan
 
 ### Transfer
-1. Hanya **pemindahan permanen**. Peminjaman antar site ditunda.
+1. Hanya **pemindahan permanen**. Peminjaman antar site diatur di [Case 3b](case-3b-peminjaman-antar-site.md).
 2. Satu transfer = **satu site asal + satu site tujuan**, boleh berisi **banyak barang**.
 3. Jumlah per barang tidak boleh melebihi **stok tersedia** di site asal. Boleh memindahkan sebagian (misal 2 dari 5).
 4. Alasan berupa **teks bebas**.
@@ -58,7 +58,6 @@ Admin site asal / pusat           Site asal (GMG)     Site tujuan (TRK)     Admi
 16. `IN_TRANSIT` lebih dari **3 hari** → **tanda merah**.
 
 ### Ditunda
-- Peminjaman antar site.
 - Cetak **surat jalan (PDF)**.
 
 ## Dampak teknis (rancangan awal, difinalkan saat coding)
