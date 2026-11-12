@@ -58,6 +58,9 @@ Aturan bisnis per case ada di folder `docs/workflow/`:
   (consumable dan non-consumable bisa diminta dalam satu keranjang; non-consumable dikembalikan, sisa consumable dilaporkan)
 - Case 2 — Pengadaan / barang masuk: `docs/workflow/case-2-pengadaan-barang-masuk.md`
   (tanpa approval; dicatat saat barang datang sebagai movement `IN` + remarks)
+- Case 3 — Pemindahan inventory: `docs/workflow/case-3-pemindahan-inventory.md`
+  (permanen; dua langkah Kirim → Terima; SKU baru di site tujuan)
+- Peran & hak akses (admin pusat, admin site, crew): `docs/workflow/peran-hak-akses.md`
 
 > Endpoint Cart dan Stock movements di bawah masih rancangan awal dan akan disesuaikan dengan dokumen workflow.
 

@@ -2,6 +2,7 @@
 
 > Status: **Disepakati** (11 November 2026)
 > Pengguna: **Admin** dan **Crew**. Tidak ada approval berjenjang; semua persetujuan oleh admin.
+> **Admin** di dokumen ini = admin site (untuk site-nya sendiri) atau admin pusat. Lihat [Peran & hak akses](peran-hak-akses.md).
 
 ## Ringkasan
 

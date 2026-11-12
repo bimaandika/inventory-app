@@ -2,6 +2,7 @@
 
 > Status: **Disepakati** (12 November 2026)
 > Pengguna: **Admin** saja. **Tanpa approval.**
+> **Admin** di dokumen ini = admin site (untuk site-nya sendiri) atau admin pusat. Lihat [Peran & hak akses](peran-hak-akses.md).
 
 ## Ringkasan
 
