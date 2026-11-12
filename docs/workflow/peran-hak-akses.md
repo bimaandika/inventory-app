@@ -1,6 +1,6 @@
 # Peran & Hak Akses
 
-> Status: **Disepakati** (12 November 2026)
+> Status: **Disepakati & dikonfirmasi** (12 November 2026)
 > Berlaku untuk semua case. **Tidak ada approval berjenjang** (coordinator/manager) untuk saat ini.
 
 ## Peran
@@ -34,9 +34,13 @@ Setiap site punya admin site masing-masing. Admin pusat dibutuhkan, misalnya saa
 - Admin site **boleh melihat** katalog site lain (misal untuk tahu site mana yang punya stok sebelum transfer), tetapi **hanya bisa bertindak** di site sendiri.
 - Crew hanya melihat dan bertindak di site sendiri (sesuai implementasi saat ini).
 
-## Dampak teknis (rancangan awal, difinalkan saat coding)
+## Dampak teknis (disetujui)
 
 - Role dibuat **eksplisit**: `admin_pusat` (tanpa site), `admin` (wajib site), `crew` (wajib site) — bukan sekadar admin dengan `site_id` kosong, supaya admin site tidak menjadi admin pusat karena lupa mengisi site.
 - Middleware & controller yang saat ini menganggap semua admin bersifat global perlu disesuaikan (inventory create/update/delete, scope site).
 - Pengelolaan site & kategori dibatasi untuk admin pusat.
 - Akun admin dari `npm run seed` menjadi **admin pusat**.
+
+## Nomor transaksi
+
+Format nomor transaksi untuk semua case (permintaan, barang masuk, transfer, peminjaman, adjustment/opname) **ditentukan oleh Bima**, seperti format SKU. Contoh di dokumen case bersifat sementara.

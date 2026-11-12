@@ -20,14 +20,14 @@ Admin                                                         Stok
    • Barang baru       → isi detail barang + jumlah
 3. Isi remarks (teks bebas)
 4. Simpan  ───────────────────────────────────────────────►  bertambah
-   → nomor transaksi IN-<site>-<tanggal>-<urut>
+   → mendapat nomor transaksi
 ```
 
 ## Aturan
 
 ### Transaksi
 1. **Satu transaksi = satu site**, boleh berisi **beberapa barang** (barang baru dan barang yang sudah ada boleh dicampur).
-2. Nomor transaksi: **`IN-<kode site>-<YYYYMMDD>-<nomor urut harian>`**, contoh `IN-GMG-20261112-001`.
+2. Nomor transaksi: contoh `IN-GMG-20261112-001`. *(format sementara — format final ditentukan Bima)*
 3. **Remarks berupa teks bebas** (misal: "Pengadaan SCM PO-123", "Petty cash, nota Toko Maju"). Belum dibuat kolom terstruktur.
 4. Tidak ada approval: transaksi langsung tercatat dan stok langsung bertambah.
 

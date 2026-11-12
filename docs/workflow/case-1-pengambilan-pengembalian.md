@@ -56,7 +56,7 @@ Crew                              Admin                               Stok
 
 ### Checkout
 8. Alasan berupa **pilihan** (Pemakaian harian / Perbaikan / Proyek / Lainnya) **+ catatan bebas**.
-9. Nomor permintaan: **`REQ-<kode site>-<YYYYMMDD>-<nomor urut harian>`**, contoh `REQ-GMG-20261111-001`.
+9. Nomor permintaan: contoh `REQ-GMG-20261111-001`. *(format sementara — format final ditentukan Bima)*
 10. Crew bisa **membatalkan** selama status masih `PENDING`.
 
 ### Persetujuan (admin)

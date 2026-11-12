@@ -82,7 +82,7 @@ Site pemilik (GMG)                                   Site peminjam (GEG)
 15. Jika site peminjam membutuhkan barang seterusnya, admin (pemilik atau pusat) dapat menekan **"Jadikan pemindahan permanen"**: peminjaman ditutup dan unit yang masih dipinjam diubah menjadi **transfer (Case 3)** — SKU baru di site peminjam, tanpa perlu mengembalikan lalu mengirim ulang barang.
 
 ### Nomor transaksi
-16. Format nomor **akan ditentukan oleh Bima**. Contoh sementara: `PJM-GMG-GEG-20261112-001`.
+16. Nomor peminjaman: contoh `PJM-GMG-GEG-20261112-001`. *(format sementara — format final ditentukan Bima)*
 
 ## Dampak teknis (rancangan awal, difinalkan saat coding)
 
