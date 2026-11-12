@@ -56,6 +56,8 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 Aturan bisnis per case ada di folder `docs/workflow/`:
 - Case 1 — Pengambilan & pengembalian: `docs/workflow/case-1-pengambilan-pengembalian.md`
   (consumable dan non-consumable bisa diminta dalam satu keranjang; non-consumable dikembalikan, sisa consumable dilaporkan)
+- Case 2 — Pengadaan / barang masuk: `docs/workflow/case-2-pengadaan-barang-masuk.md`
+  (tanpa approval; dicatat saat barang datang sebagai movement `IN` + remarks)
 
 > Endpoint Cart dan Stock movements di bawah masih rancangan awal dan akan disesuaikan dengan dokumen workflow.
 
