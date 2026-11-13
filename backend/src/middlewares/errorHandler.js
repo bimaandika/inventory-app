@@ -7,6 +7,19 @@ const UNIQUE_MESSAGES = {
   inventories_site_name_unique: 'Barang dengan nama ini sudah ada di site tersebut',
 };
 
+/** Pesan yang lebih jelas untuk constraint CHECK tertentu. */
+const CHECK_MESSAGES = {
+  users_role_site_check: 'Admin pusat tidak boleh punya site; admin site dan crew wajib punya site',
+  sites_code_format: 'Kode site hanya boleh huruf besar dan angka, maksimal 10 karakter',
+};
+
+/** Pesan untuk error upload (multer). */
+const UPLOAD_MESSAGES = {
+  LIMIT_FILE_SIZE: () => `Ukuran foto maksimal ${process.env.UPLOAD_MAX_MB || 2} MB`,
+  LIMIT_FILE_COUNT: () => 'Hanya boleh mengunggah 1 foto',
+  LIMIT_UNEXPECTED_FILE: () => 'Foto harus dikirim pada field form-data bernama "image"',
+};
+
 /** 404 untuk route yang tidak terdaftar. */
 export function notFoundHandler(req, res) {
   res.status(404).json({ message: `Route ${req.method} ${req.originalUrl} tidak ditemukan` });
@@ -37,7 +50,15 @@ export function errorHandler(err, req, res, next) {
     return res.status(400).json({ message: 'Format JSON tidak valid' });
   }
   if (err.code === '23514') {
-    return res.status(400).json({ message: 'Data melanggar aturan validasi', detail: err.constraint });
+    return res.status(400).json({
+      message: CHECK_MESSAGES[err.constraint] || 'Data melanggar aturan validasi',
+      detail: err.constraint,
+    });
+  }
+  // Error upload foto
+  if (err.name === 'MulterError') {
+    const message = UPLOAD_MESSAGES[err.code]?.() || `Upload gagal: ${err.message}`;
+    return res.status(400).json({ message });
   }
 
   const status = err.status || 500;

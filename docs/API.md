@@ -2,31 +2,41 @@
 
 Base URL: `/api`. Semua endpoint (kecuali login dan health) memerlukan header `Authorization: Bearer <token>`.
 
-Keterangan role: **semua** = admin & crew, **admin** = hanya admin, **crew** = pemilik data.
+Peran (lihat `docs/workflow/peran-hak-akses.md`):
+- **pusat** = `admin_pusat` — semua site
+- **admin** = `admin` (admin site) — bertindak hanya di site sendiri, boleh melihat site lain
+- **crew** = `crew` — hanya site sendiri
+- **semua** = ketiga peran di atas
+
+Token hanya berisi `id` user; role, site, dan status aktif selalu dibaca ulang dari database di setiap request, sehingga perubahan langsung berlaku. User nonaktif ditolak (401).
 
 ## Auth
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
-| POST | `/auth/login` | publik | Mengembalikan JWT (`id`, `role`, `site_id`) |
-| GET | `/auth/me` | semua | Profil user login |
-| PATCH | `/auth/password` | semua | Ganti password sendiri |
+| POST | `/auth/login` | publik | Body `{ username, password }` → `{ token, user }`. User nonaktif ditolak (403) |
+| GET | `/auth/me` | semua | Profil: `id`, `username`, `name`, `role`, `site_id`, `site_name`, `site_code` |
+| PATCH | `/auth/password` | semua | Body `{ old_password, new_password }` |
 
-## Users (admin)
+## Users (pusat)
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/users?role=&site_id=&search=` | Daftar user |
+| GET | `/users?role=&site_id=&search=&include_inactive=&page=&limit=` | Daftar user (default hanya yang aktif) |
 | GET | `/users/:id` | Detail |
-| POST | `/users` | Buat akun |
-| PUT | `/users/:id` | Ubah data, role, site |
-| PATCH | `/users/:id/reset-password` | Reset password |
-| DELETE | `/users/:id` | Hapus |
+| POST | `/users` | Body `{ username, name, password, role, site_id }` |
+| PUT | `/users/:id` | Body `{ name, role, site_id }` (username tidak bisa diubah) |
+| PATCH | `/users/:id/password` | Body `{ new_password }` — reset password |
+| PATCH | `/users/:id/active` | Body `{ is_active: true/false }` — user tidak dihapus, tetapi dinonaktifkan |
+
+- `role`: `admin_pusat` (tanpa `site_id`), `admin` / `crew` (wajib `site_id`).
+- `username`: 3–50 karakter, huruf kecil/angka/`.`/`_`/`-` (otomatis dijadikan huruf kecil). Password minimal 6 karakter.
+- Tidak bisa menonaktifkan atau mengubah role akun sendiri; harus selalu ada minimal satu admin pusat aktif.
 
 ## Sites & Categories
 | Method | Endpoint | Role |
 |---|---|---|
-| GET | `/sites`, `/categories` | semua (crew hanya site sendiri) |
+| GET | `/sites`, `/categories` | semua (crew hanya melihat site sendiri) |
 | GET | `/sites/:id`, `/categories/:id` | semua |
-| POST / PUT / DELETE | `/sites/:id`, `/categories/:id` | admin |
+| POST / PUT / DELETE | `/sites/:id`, `/categories/:id` | pusat |
 
 Body site: `{ name, code }`. `code` (huruf besar/angka, maks 10, unik) dipakai di SKU dan **tidak bisa diubah** jika site sudah punya barang.
 
@@ -35,13 +45,17 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
-| GET | `/inventories?search=&category_id=&type=&site_id=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri |
-| GET | `/inventories/:id` | semua | Crew hanya untuk site sendiri |
+| GET | `/inventories?search=&category_id=&type=&site_id=&include_inactive=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri & barang aktif |
+| GET | `/inventories/:id` | semua | Crew hanya untuk barang aktif di site sendiri |
 | GET | `/inventories/sku/:sku` | semua | Scan SKU |
-| POST | `/inventories` | admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `quantity` (stok awal, opsional). SKU dibuat otomatis |
-| PUT | `/inventories/:id` | admin | Body sama seperti POST **tanpa** `quantity` |
-| PATCH | `/inventories/:id/image` | admin | *(Tahap 2)* Upload foto kondisi barang |
-| DELETE | `/inventories/:id` | admin | |
+| POST | `/inventories` | pusat, admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `quantity` (stok awal, opsional). SKU dibuat otomatis. Admin site hanya untuk site sendiri |
+| PUT | `/inventories/:id` | pusat, admin | Body sama seperti POST **tanpa** `quantity`. Hanya pusat yang boleh mengganti `site_id` |
+| PATCH | `/inventories/:id/active` | pusat, admin | Body `{ is_active: true/false }` — nonaktifkan / aktifkan kembali |
+| DELETE | `/inventories/:id` | pusat, admin | Hanya untuk barang tanpa riwayat transaksi (409 jika sudah ada → nonaktifkan) |
+| PATCH | `/inventories/:id/image` | pusat, admin | Upload foto kondisi: **form-data**, field `image` (JPG/PNG/WEBP, maks `UPLOAD_MAX_MB`, default 2 MB). Foto lama dihapus |
+| DELETE | `/inventories/:id/image` | pusat, admin | Hapus foto tanpa menghapus barang |
+
+Foto bisa dibuka di `http://localhost:5050<image>`, misal `http://localhost:5050/uploads/inventories/abc123.jpg`.
 
 - `type`: `CONSUMABLE` (habis pakai) atau `NON_CONSUMABLE` (tidak habis pakai, misal tools).
 - **SKU otomatis**: `MEGS-<kode site>-<kode jenis>-<nomor urut>`, contoh `MEGS-GMG-ET-001`.

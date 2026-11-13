@@ -1,0 +1,141 @@
+### Contoh request Tahap 2 — Peran, kelola user, nonaktifkan barang, upload foto
+### Jalankan dengan VS Code extension "REST Client", atau tiru di Postman.
+
+@baseUrl = http://localhost:5050/api
+
+### 1. Login sebagai admin pusat (akun dari `npm run seed`)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "admin123" }
+
+###
+@tokenPusat = TEMPEL_TOKEN_ADMIN_PUSAT
+
+### ---------- KELOLA USER (admin pusat) ----------
+### Buat admin site Gunung Megang (site_id 1)
+POST {{baseUrl}}/users
+Authorization: Bearer {{tokenPusat}}
+Content-Type: application/json
+
+{ "username": "admin.gmg", "name": "Admin Gunung Megang", "password": "rahasia123", "role": "admin", "site_id": 1 }
+
+### Buat crew Gunung Megang
+POST {{baseUrl}}/users
+Authorization: Bearer {{tokenPusat}}
+Content-Type: application/json
+
+{ "username": "crew.gmg1", "name": "Budi", "password": "rahasia123", "role": "crew", "site_id": 1 }
+
+### Daftar user (filter: role, site_id, search; tambah include_inactive=true untuk melihat yang nonaktif)
+GET {{baseUrl}}/users?site_id=1
+Authorization: Bearer {{tokenPusat}}
+
+### Ubah nama / role / site user (ganti :id)
+PUT {{baseUrl}}/users/2
+Authorization: Bearer {{tokenPusat}}
+Content-Type: application/json
+
+{ "name": "Admin GMG", "role": "admin", "site_id": 1 }
+
+### Reset password user
+PATCH {{baseUrl}}/users/3/password
+Authorization: Bearer {{tokenPusat}}
+Content-Type: application/json
+
+{ "new_password": "baru12345" }
+
+### Nonaktifkan user (aktifkan lagi dengan true)
+PATCH {{baseUrl}}/users/3/active
+Authorization: Bearer {{tokenPusat}}
+Content-Type: application/json
+
+{ "is_active": false }
+
+### ---------- LOGIN SEBAGAI ADMIN SITE & CREW ----------
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin.gmg", "password": "rahasia123" }
+
+###
+@tokenAdmin = TEMPEL_TOKEN_ADMIN_SITE
+
+###
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "crew.gmg1", "password": "rahasia123" }
+
+###
+@tokenCrew = TEMPEL_TOKEN_CREW
+
+### ---------- HAK AKSES YANG DIHARAPKAN ----------
+### Admin site tambah barang di site sendiri → 201
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "category_id": 1, "site_id": 1 }
+
+### Admin site tambah barang di site lain → 403
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "category_id": 1, "site_id": 2 }
+
+### Admin site membuat kategori → 403 (khusus admin pusat)
+POST {{baseUrl}}/categories
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "name": "Kategori Baru" }
+
+### Admin site melihat barang semua site → 200
+GET {{baseUrl}}/inventories
+Authorization: Bearer {{tokenAdmin}}
+
+### Crew melihat barang → hanya site sendiri & aktif (site_id diabaikan)
+GET {{baseUrl}}/inventories?site_id=2
+Authorization: Bearer {{tokenCrew}}
+
+### Crew menambah barang → 403
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{tokenCrew}}
+Content-Type: application/json
+
+{ "name": "X", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1 }
+
+### Crew membuka kelola user → 403
+GET {{baseUrl}}/users
+Authorization: Bearer {{tokenCrew}}
+
+### ---------- NONAKTIFKAN BARANG ----------
+PATCH {{baseUrl}}/inventories/1/active
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "is_active": false }
+
+### Admin melihat barang termasuk yang nonaktif
+GET {{baseUrl}}/inventories?include_inactive=true
+Authorization: Bearer {{tokenAdmin}}
+
+### ---------- UPLOAD FOTO (disiapkan; dipakai saat foto sudah ada) ----------
+### Di Postman: Body → form-data → key "image" (tipe File) → pilih foto.
+### Di REST Client: ganti path file di bawah dengan foto di komputermu.
+PATCH {{baseUrl}}/inventories/1/image
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: multipart/form-data; boundary=BATAS
+
+--BATAS
+Content-Disposition: form-data; name="image"; filename="foto.jpg"
+Content-Type: image/jpeg
+
+< ./foto.jpg
+--BATAS--
+
+### Hapus foto
+DELETE {{baseUrl}}/inventories/1/image
+Authorization: Bearer {{tokenAdmin}}

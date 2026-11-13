@@ -1,6 +1,6 @@
 /**
  * Data awal:
- * - Akun admin dari ADMIN_USERNAME / ADMIN_PASSWORD di .env
+ * - Akun admin pusat dari ADMIN_USERNAME / ADMIN_PASSWORD di .env
  * - Daftar site beserta kodenya (dipakai di SKU: MEGS-<kode>-ET-001)
  *
  * Aman dijalankan berulang (tidak membuat duplikat).
@@ -23,12 +23,14 @@ async function seedAdmin() {
   const hash = await bcrypt.hash(password, 10);
 
   const { rowCount } = await pool.query(
-    `INSERT INTO users (username, password, role, site_id)
-     VALUES ($1, $2, 'admin', NULL)
+    `INSERT INTO users (username, name, password, role, site_id)
+     VALUES ($1, 'Administrator', $2, 'admin_pusat', NULL)
      ON CONFLICT (username) DO NOTHING`,
     [username, hash],
   );
-  console.log(rowCount ? `✔ Admin "${username}" dibuat` : `• Admin "${username}" sudah ada`);
+  console.log(
+    rowCount ? `✔ Admin pusat "${username}" dibuat` : `• Admin pusat "${username}" sudah ada`,
+  );
 }
 
 async function seedSites() {

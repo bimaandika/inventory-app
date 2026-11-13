@@ -3,6 +3,7 @@ import authRoutes from './authRoutes.js';
 import siteRoutes from './siteRoutes.js';
 import categoryRoutes from './categoryRoutes.js';
 import inventoryRoutes from './inventoryRoutes.js';
+import userRoutes from './userRoutes.js';
 
 const router = Router();
 
@@ -12,10 +13,9 @@ router.use('/auth', authRoutes);
 router.use('/sites', siteRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/inventories', inventoryRoutes);
+router.use('/users', userRoutes); // admin pusat
 
-// Route berikut akan ditambahkan bertahap (lihat docs/API.md):
-// router.use('/users', userRoutes);                 // admin
-// router.use('/stocks', stockRoutes);
+// Route berikut akan ditambahkan bertahap (lihat docs/workflow/):
 // router.use('/cart', cartRoutes);
 // router.use('/stock-movements', stockMovementRoutes);
 // router.use('/histories', historyRoutes);          // admin

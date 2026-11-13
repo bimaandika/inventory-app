@@ -1,9 +1,12 @@
 # Inventory App
 
-Aplikasi manajemen inventory multi-site dengan dua peran:
+Aplikasi manajemen inventory multi-site dengan tiga peran:
 
-- **Admin**: kelola master data (site, kategori, barang, stok, user), setujui/tolak permintaan barang, catat stok masuk, lihat laporan semua site.
-- **Crew**: lihat stok di site sendiri, ajukan permintaan barang lewat cart, pantau status permintaannya.
+- **Admin pusat**: kelola seluruh sistem (site, kategori, user) dan bisa bertindak di semua site.
+- **Admin site**: kelola barang dan transaksi di site-nya sendiri.
+- **Crew**: lihat barang di site sendiri, ajukan permintaan, laporkan pengembalian.
+
+Aturan bisnis lengkap ada di `docs/workflow/`, rancangan database di `docs/erd.md`.
 
 ## Tech stack
 
@@ -57,7 +60,7 @@ cd backend
 cp .env.example .env      # sesuaikan kredensial database & JWT_SECRET
 npm install
 npm run migrate           # buat tabel dari migrations/
-npm run seed              # buat akun admin awal + 5 site (GMG, POMS, GEG, FOL, TRK)
+npm run seed              # buat akun admin pusat + 5 site (GMG, POMS, GEG, FOL, TRK)
 npm run dev               # http://localhost:5050/api
 ```
 
