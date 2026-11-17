@@ -1,14 +1,14 @@
-import { query } from '../config/db.js';
-import { badRequest, notFound, forbidden, conflict } from '../utils/httpError.js';
-import { parseId, requireString } from '../utils/validate.js';
+const { Site, User, Inventory } = require('../models');
+const { badRequest, notFound, forbidden, conflict } = require('../helpers/httpError');
+const { parseId, requireString } = require('../helpers/validate');
+const { canViewSite } = require('../middlewares/auth');
 
 /*
  * Setiap site punya `code` (misal GMG, POMS, GEG, FOL, TRK) yang dipakai
- * di SKU barang: MEGS-<code>-ET-001. Kode harus unik, huruf besar/angka,
- * maksimal 10 karakter.
+ * di SKU barang: MEGS-<code>-ET-001. Kode unik, huruf besar/angka, maks 10 karakter.
+ *
+ * Lihat: semua peran (crew hanya site sendiri). Kelola: admin pusat (diatur di routes).
  */
-
-const SITE_COLUMNS = 'id, name, code, created_at, updated_at';
 
 function readCode(body) {
   const code = requireString(body, 'code', { max: 10 }).toUpperCase();
@@ -18,80 +18,63 @@ function readCode(body) {
   return code;
 }
 
-/** GET /api/sites — admin: semua site, crew: hanya site miliknya. */
-export async function list(req, res) {
-  const isCrew = req.user.role === 'crew';
-  const { rows } = await query(
-    `SELECT ${SITE_COLUMNS}
-       FROM sites
-      ${isCrew ? 'WHERE id = $1' : ''}
-      ORDER BY name`,
-    isCrew ? [req.user.site_id] : [],
-  );
-  res.json({ data: rows });
+async function findSite(id) {
+  const site = await Site.findByPk(id);
+  if (!site) throw notFound('Site tidak ditemukan');
+  return site;
 }
 
-/** GET /api/sites/:id */
-export async function detail(req, res) {
+/** GET /api/sites — crew hanya melihat site-nya sendiri. */
+async function list(req, res) {
+  const where = req.user.role === 'crew' ? { id: req.user.site_id } : {};
+  const sites = await Site.findAll({ where, order: [['name', 'ASC']] });
+  res.json({ data: sites });
+}
+
+/** GET /api/sites/:id — termasuk jumlah user & barang di site tersebut. */
+async function detail(req, res) {
   const id = parseId(req.params.id);
-  if (req.user.role === 'crew' && req.user.site_id !== id) {
-    throw forbidden('Anda hanya dapat melihat site Anda sendiri');
-  }
+  if (!canViewSite(req.user, id)) throw forbidden('Anda hanya dapat melihat site Anda sendiri');
 
-  const { rows } = await query(
-    `SELECT s.id, s.name, s.code, s.created_at, s.updated_at,
-            (SELECT COUNT(*)::int FROM users u       WHERE u.site_id = s.id) AS total_users,
-            (SELECT COUNT(*)::int FROM inventories i WHERE i.site_id = s.id) AS total_items
-       FROM sites s
-      WHERE s.id = $1`,
-    [id],
-  );
-  if (!rows[0]) throw notFound('Site tidak ditemukan');
-  res.json({ data: rows[0] });
+  const site = await findSite(id);
+  const [totalUsers, totalItems] = await Promise.all([
+    User.count({ where: { site_id: id } }),
+    Inventory.count({ where: { site_id: id } }),
+  ]);
+  res.json({ data: { ...site.toJSON(), total_users: totalUsers, total_items: totalItems } });
 }
 
-/** POST /api/sites (admin) — body: { name, code } */
-export async function create(req, res) {
-  const name = requireString(req.body, 'name', { max: 100 });
-  const code = readCode(req.body);
-  const { rows } = await query(
-    `INSERT INTO sites (name, code) VALUES ($1, $2) RETURNING ${SITE_COLUMNS}`,
-    [name, code],
-  );
-  res.status(201).json({ message: 'Site berhasil dibuat', data: rows[0] });
+/** POST /api/sites — body: { name, code } */
+async function create(req, res) {
+  const site = await Site.create({
+    name: requireString(req.body, 'name', { max: 100 }),
+    code: readCode(req.body),
+  });
+  res.status(201).json({ message: 'Site berhasil dibuat', data: site });
 }
 
 /**
- * PUT /api/sites/:id (admin) — body: { name, code }
- * Kode site tidak bisa diubah jika sudah dipakai di SKU barang,
- * supaya SKU yang sudah ada tetap konsisten dengan site-nya.
+ * PUT /api/sites/:id — body: { name, code }
+ * Kode site tidak bisa diubah jika sudah dipakai di SKU barang.
  */
-export async function update(req, res) {
-  const id = parseId(req.params.id);
+async function update(req, res) {
+  const site = await findSite(parseId(req.params.id));
   const name = requireString(req.body, 'name', { max: 100 });
   const code = readCode(req.body);
 
-  const current = await query(
-    `SELECT s.code, EXISTS (SELECT 1 FROM inventories i WHERE i.site_id = s.id) AS has_items
-       FROM sites s WHERE s.id = $1`,
-    [id],
-  );
-  if (!current.rows[0]) throw notFound('Site tidak ditemukan');
-  if (current.rows[0].code !== code && current.rows[0].has_items) {
+  if (code !== site.code && (await Inventory.count({ where: { site_id: site.id } })) > 0) {
     throw conflict('Kode site tidak bisa diubah karena sudah dipakai di SKU barang');
   }
 
-  const { rows } = await query(
-    `UPDATE sites SET name = $1, code = $2 WHERE id = $3 RETURNING ${SITE_COLUMNS}`,
-    [name, code, id],
-  );
-  res.json({ message: 'Site berhasil diperbarui', data: rows[0] });
+  await site.update({ name, code });
+  res.json({ message: 'Site berhasil diperbarui', data: site });
 }
 
-/** DELETE /api/sites/:id (admin) — gagal (409) jika site masih punya user atau barang. */
-export async function remove(req, res) {
-  const id = parseId(req.params.id);
-  const { rowCount } = await query('DELETE FROM sites WHERE id = $1', [id]);
-  if (!rowCount) throw notFound('Site tidak ditemukan');
+/** DELETE /api/sites/:id — gagal (409) jika site masih punya user atau barang. */
+async function remove(req, res) {
+  const site = await findSite(parseId(req.params.id));
+  await site.destroy();
   res.json({ message: 'Site berhasil dihapus' });
 }
+
+module.exports = { list, detail, create, update, remove };

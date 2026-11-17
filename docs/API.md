@@ -8,13 +8,15 @@ Peran (lihat `docs/workflow/peran-hak-akses.md`):
 - **crew** = `crew` — hanya site sendiri
 - **semua** = ketiga peran di atas
 
+Response objek barang & user menyertakan relasi bertingkat, misal `"site": { "id", "name", "code" }` dan `"category": { "id", "name" }`.
+
 Token hanya berisi `id` user; role, site, dan status aktif selalu dibaca ulang dari database di setiap request, sehingga perubahan langsung berlaku. User nonaktif ditolak (401).
 
 ## Auth
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
 | POST | `/auth/login` | publik | Body `{ username, password }` → `{ token, user }`. User nonaktif ditolak (403) |
-| GET | `/auth/me` | semua | Profil: `id`, `username`, `name`, `role`, `site_id`, `site_name`, `site_code` |
+| GET | `/auth/me` | semua | Profil: `id`, `username`, `name`, `role`, `site_id`, `site` |
 | PATCH | `/auth/password` | semua | Body `{ old_password, new_password }` |
 
 ## Users (pusat)

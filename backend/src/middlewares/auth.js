@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
-import { query } from '../config/db.js';
-import { unauthorized, forbidden } from '../utils/httpError.js';
+const { User } = require('../models');
+const { verifyToken } = require('../helpers/jwt');
+const { unauthorized, forbidden } = require('../helpers/httpError');
 
 /*
  * Peran (lihat docs/workflow/peran-hak-akses.md):
@@ -8,44 +8,43 @@ import { unauthorized, forbidden } from '../utils/httpError.js';
  *   admin       — admin site, hanya site sendiri
  *   crew        — hanya site sendiri
  */
-export const ROLES = ['admin_pusat', 'admin', 'crew'];
+const ROLES = ['admin_pusat', 'admin', 'crew'];
 
 /**
  * Verifikasi JWT dari header "Authorization: Bearer <token>",
- * lalu ambil data user terbaru dari database.
- * Dengan begitu perubahan role/site/nonaktif langsung berlaku
- * tanpa menunggu token kedaluwarsa.
+ * lalu ambil data user terbaru dari database, sehingga perubahan
+ * role/site/nonaktif langsung berlaku tanpa menunggu token kedaluwarsa.
  *
  * Hasil: req.user = { id, username, name, role, site_id }
  */
-export async function authenticate(req, res, next) {
-  const header = req.headers.authorization || '';
-  const [scheme, token] = header.split(' ');
-  if (scheme !== 'Bearer' || !token) {
-    return next(unauthorized('Token tidak ditemukan'));
-  }
-
-  let payload;
+async function authenticate(req, res, next) {
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET);
-  } catch {
-    return next(unauthorized('Token tidak valid atau kedaluwarsa'));
-  }
+    const [scheme, token] = (req.headers.authorization || '').split(' ');
+    if (scheme !== 'Bearer' || !token) throw unauthorized('Token tidak ditemukan');
 
-  try {
-    const { rows } = await query(
-      'SELECT id, username, name, role, site_id, is_active FROM users WHERE id = $1',
-      [payload.id],
-    );
-    const user = rows[0];
-    if (!user) return next(unauthorized('Akun tidak ditemukan'));
-    if (!user.is_active) return next(unauthorized('Akun Anda sudah dinonaktifkan'));
+    let payload;
+    try {
+      payload = verifyToken(token);
+    } catch {
+      throw unauthorized('Token tidak valid atau kedaluwarsa');
+    }
 
-    const { is_active: _active, ...safeUser } = user;
-    req.user = safeUser;
-    return next();
+    const user = await User.findByPk(payload.id, {
+      attributes: ['id', 'username', 'name', 'role', 'site_id', 'is_active'],
+    });
+    if (!user) throw unauthorized('Akun tidak ditemukan');
+    if (!user.is_active) throw unauthorized('Akun Anda sudah dinonaktifkan');
+
+    req.user = {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      site_id: user.site_id,
+    };
+    next();
   } catch (err) {
-    return next(err);
+    next(err);
   }
 }
 
@@ -53,7 +52,7 @@ export async function authenticate(req, res, next) {
  * Batasi route berdasarkan role.
  * Contoh: router.post('/', authorize('admin_pusat'), handler)
  */
-export function authorize(...roles) {
+function authorize(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return next(forbidden('Anda tidak memiliki akses ke fitur ini'));
@@ -63,29 +62,27 @@ export function authorize(...roles) {
 }
 
 /** Admin pusat: bisa bertindak di semua site. */
-export const isPusat = (user) => user?.role === 'admin_pusat';
+const isPusat = (user) => user?.role === 'admin_pusat';
 
-/**
- * Site yang boleh DILIHAT user.
- * - crew          : hanya site sendiri
- * - admin & pusat : semua site
- */
-export function canViewSite(user, siteId) {
-  return user.role !== 'crew' || user.site_id === siteId;
-}
+/** Site yang boleh DILIHAT: crew hanya site sendiri; admin & pusat semua site. */
+const canViewSite = (user, siteId) => user.role !== 'crew' || user.site_id === siteId;
 
-/**
- * Site tempat user boleh BERTINDAK (membuat/mengubah data).
- * - admin pusat : semua site
- * - admin/crew  : hanya site sendiri
- */
-export function canActOnSite(user, siteId) {
-  return isPusat(user) || user.site_id === siteId;
-}
+/** Site tempat user boleh BERTINDAK: pusat semua site; admin/crew hanya site sendiri. */
+const canActOnSite = (user, siteId) => isPusat(user) || user.site_id === siteId;
 
 /** Lempar 403 jika user tidak boleh bertindak di site tersebut. */
-export function assertCanActOnSite(user, siteId, message) {
+function assertCanActOnSite(user, siteId, message) {
   if (!canActOnSite(user, siteId)) {
     throw forbidden(message || 'Anda hanya dapat mengelola data di site Anda sendiri');
   }
 }
+
+module.exports = {
+  ROLES,
+  authenticate,
+  authorize,
+  isPusat,
+  canViewSite,
+  canActOnSite,
+  assertCanActOnSite,
+};

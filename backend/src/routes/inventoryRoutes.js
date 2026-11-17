@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth.js';
-import { asyncHandler } from '../utils/httpError.js';
-import { inventoryImageUpload } from '../config/upload.js';
-import * as ctrl from '../controllers/inventoryController.js';
+const { Router } = require('express');
+const { authenticate, authorize } = require('../middlewares/auth');
+const { asyncHandler } = require('../helpers/httpError');
+const { inventoryImageUpload } = require('../config/upload');
+const ctrl = require('../controllers/inventoryController');
 
 const router = Router();
 const ADMINS = ['admin_pusat', 'admin'];
@@ -24,4 +24,4 @@ router.delete('/:id', authorize(...ADMINS), asyncHandler(ctrl.remove));
 router.patch('/:id/image', authorize(...ADMINS), inventoryImageUpload, asyncHandler(ctrl.uploadImage));
 router.delete('/:id/image', authorize(...ADMINS), asyncHandler(ctrl.removeImage));
 
-export default router;
+module.exports = router;

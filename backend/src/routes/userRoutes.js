@@ -1,7 +1,7 @@
-import { Router } from 'express';
-import { authenticate, authorize } from '../middlewares/auth.js';
-import { asyncHandler } from '../utils/httpError.js';
-import * as ctrl from '../controllers/userController.js';
+const { Router } = require('express');
+const { authenticate, authorize } = require('../middlewares/auth');
+const { asyncHandler } = require('../helpers/httpError');
+const ctrl = require('../controllers/userController');
 
 const router = Router();
 
@@ -15,4 +15,4 @@ router.put('/:id', asyncHandler(ctrl.update));
 router.patch('/:id/password', asyncHandler(ctrl.resetPassword));
 router.patch('/:id/active', asyncHandler(ctrl.setActive));
 
-export default router;
+module.exports = router;

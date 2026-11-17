@@ -1,63 +1,49 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { query } from '../config/db.js';
-import { badRequest, unauthorized, forbidden, notFound } from '../utils/httpError.js';
+const { User, Site } = require('../models');
+const { comparePassword } = require('../helpers/bcrypt');
+const { signToken } = require('../helpers/jwt');
+const { badRequest, unauthorized, forbidden, notFound } = require('../helpers/httpError');
 
-/**
- * Token hanya berisi id user. Data lain (role, site, status aktif)
- * selalu diambil ulang dari database oleh middleware authenticate.
- */
-function signToken(user) {
-  return jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d',
+/** Profil user beserta site-nya (password otomatis tidak ikut, lihat models/user.js). */
+const findProfile = (id) =>
+  User.findByPk(id, {
+    attributes: ['id', 'username', 'name', 'role', 'site_id'],
+    include: [{ model: Site, as: 'site', attributes: ['id', 'name', 'code'] }],
   });
-}
 
-const PROFILE_SQL = `
-  SELECT u.id, u.username, u.name, u.role, u.site_id,
-         s.name AS site_name, s.code AS site_code
-    FROM users u
-    LEFT JOIN sites s ON s.id = u.site_id
-   WHERE u.id = $1`;
-
-/** POST /api/auth/login */
-export async function login(req, res) {
+/** POST /api/auth/login — body: { username, password } */
+async function login(req, res) {
   const { username, password } = req.body || {};
   if (!username || !password) throw badRequest('Username dan password wajib diisi');
 
-  const { rows } = await query(
-    'SELECT id, password, is_active FROM users WHERE username = $1',
-    [String(username).trim()],
-  );
-  const user = rows[0];
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  const user = await User.findOne({ where: { username: String(username).trim().toLowerCase() } });
+  if (!user || !(await comparePassword(password, user.password))) {
     throw unauthorized('Username atau password salah');
   }
   if (!user.is_active) throw forbidden('Akun Anda sudah dinonaktifkan. Hubungi admin.');
 
-  const profile = await query(PROFILE_SQL, [user.id]);
-  res.json({ token: signToken(user), user: profile.rows[0] });
+  res.json({ token: signToken(user), user: await findProfile(user.id) });
 }
 
 /** GET /api/auth/me */
-export async function me(req, res) {
-  const { rows } = await query(PROFILE_SQL, [req.user.id]);
-  if (!rows[0]) throw notFound('User tidak ditemukan');
-  res.json(rows[0]);
+async function me(req, res) {
+  const profile = await findProfile(req.user.id);
+  if (!profile) throw notFound('User tidak ditemukan');
+  res.json(profile);
 }
 
-/** PATCH /api/auth/password */
-export async function changePassword(req, res) {
+/** PATCH /api/auth/password — body: { old_password, new_password } */
+async function changePassword(req, res) {
   const { old_password, new_password } = req.body || {};
   if (!old_password || !new_password) throw badRequest('Password lama dan baru wajib diisi');
   if (String(new_password).length < 6) throw badRequest('Password baru minimal 6 karakter');
 
-  const { rows } = await query('SELECT password FROM users WHERE id = $1', [req.user.id]);
-  if (!rows[0] || !(await bcrypt.compare(old_password, rows[0].password))) {
+  const user = await User.findByPk(req.user.id);
+  if (!user || !(await comparePassword(old_password, user.password))) {
     throw badRequest('Password lama salah');
   }
 
-  const hash = await bcrypt.hash(new_password, 10);
-  await query('UPDATE users SET password = $1 WHERE id = $2', [hash, req.user.id]);
+  await user.update({ password: new_password }); // di-hash oleh hook model
   res.json({ message: 'Password berhasil diubah' });
 }
+
+module.exports = { login, me, changePassword };

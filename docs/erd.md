@@ -164,15 +164,19 @@ Kolom khusus header:
 - Hanya satu `OPNAME` aktif per site per `inventory_type` (partial unique index).
 - Selebihnya (status valid per `type`, kolom mana yang wajib) dijaga di **kode backend**.
 
-## Perubahan dari skema saat ini
+## Implementasi
 
-| Tabel | Perubahan |
-|---|---|
-| `users` | `role` → `admin_pusat` / `admin` / `crew` (admin dari seed → `admin_pusat`); tambah `name`, `is_active` |
-| `inventories` | tambah `is_active` |
-| `stock_movements` | `type` diganti daftar baru; tambah `status_changed_at`, `site_id`, `to_site_id`, `parent_id`, `requester_id`, `inventory_type`; `receipt` → `number` |
-| `inventory_carts` | **berganti nama** → `stock_movement_items`; `id_sm` → `movement_id`; tambah kolom `qty_*`, `dest_inventory_id`, `ref_item_id`, `reason`, `note`; kolom `status` & `receipt` dihapus |
-| `histories` | tambah `action`; status mengikuti `type` transaksi |
-| `sites`, `categories`, `sku_sequences` | tetap |
+Skema dibuat oleh **migrasi Sequelize** di `backend/migrations/` (satu file per tabel), dan dipetakan ke model di `backend/src/models/`:
 
-Tabel transaksi saat ini **belum berisi data**, jadi aman diubah lewat migrasi baru.
+| Tabel | Model | Migrasi |
+|---|---|---|
+| `sites` | `Site` | `…01-create-sites.js` |
+| `users` | `User` | `…02-create-users.js` |
+| `categories` | `Category` | `…03-create-categories.js` |
+| `inventories` | `Inventory` | `…04-create-inventories.js` |
+| `sku_sequences` | `SkuSequence` | `…05-create-sku-sequences.js` |
+| `stock_movements` | `StockMovement` | `…06-create-stock-movements.js` |
+| `stock_movement_items` | `StockMovementItem` | `…07-create-stock-movement-items.js` |
+| `histories` | `History` | `…08-create-histories.js` |
+
+Aturan yang tidak bisa ditulis lewat opsi Sequelize biasa (CHECK constraint, partial unique index, index `LOWER(name)`) dibuat dengan `queryInterface.sequelize.query()` di dalam file migrasinya.

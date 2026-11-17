@@ -3,47 +3,49 @@
  * Format : MEGS-<kode site>-<kode jenis>-<nomor urut>
  * Contoh : MEGS-GMG-ET-001
  *
- * - Kode site diambil dari kolom sites.code.
- * - Kode jenis: NON_CONSUMABLE = ET, CONSUMABLE = SM.
- * - Nomor urut dihitung per site per jenis lewat tabel sku_sequences.
+ * - Kode site dari kolom sites.code
+ * - Kode jenis: NON_CONSUMABLE = ET, CONSUMABLE = SM
+ * - Nomor urut per site per jenis (tabel sku_sequences), minimal 3 digit
  *
- * Panggil di dalam transaksi (withTransaction) bersama INSERT/UPDATE barangnya,
- * supaya nomor tidak "terbuang" kalau penyimpanan barang gagal.
+ * Panggil DI DALAM transaksi bersama penyimpanan barangnya, supaya nomor
+ * tidak "terbuang" kalau penyimpanan barang gagal.
  */
-import { badRequest } from '../utils/httpError.js';
+const { sequelize, Site } = require('../models');
+const { badRequest } = require('../helpers/httpError');
 
-export const SKU_PREFIX = 'MEGS';
+const SKU_PREFIX = 'MEGS';
 
-export const TYPE_CODES = {
+const TYPE_CODES = {
   NON_CONSUMABLE: 'ET',
   CONSUMABLE: 'SM',
 };
 
-/** Nomor urut minimal 3 digit: 1 → "001", 1000 → "1000". */
-export function formatNumber(n) {
-  return String(n).padStart(3, '0');
-}
+/** 1 → "001", 1000 → "1000" */
+const formatNumber = (n) => String(n).padStart(3, '0');
 
 /**
  * Ambil nomor urut berikutnya dan susun SKU-nya.
- * @param {import('pg').PoolClient} client — client dari withTransaction
+ * @param {string} type        CONSUMABLE | NON_CONSUMABLE
+ * @param {object} transaction transaksi Sequelize
  */
-export async function generateSku(client, siteId, type) {
+async function generateSku(siteId, type, transaction) {
   const typeCode = TYPE_CODES[type];
   if (!typeCode) throw badRequest(`type ${type} tidak dikenal`);
 
-  const site = await client.query('SELECT code FROM sites WHERE id = $1', [siteId]);
-  if (!site.rows[0]) throw badRequest('site_id tidak ditemukan');
+  const site = await Site.findByPk(siteId, { attributes: ['code'], transaction });
+  if (!site) throw badRequest('site_id tidak ditemukan');
 
   // Atomik: baris baru mulai dari 1, baris yang sudah ada ditambah 1.
-  const { rows } = await client.query(
+  const [rows] = await sequelize.query(
     `INSERT INTO sku_sequences (site_id, type, last_number)
-     VALUES ($1, $2::inventory_type, 1)
+     VALUES (:siteId, :type, 1)
      ON CONFLICT (site_id, type)
      DO UPDATE SET last_number = sku_sequences.last_number + 1
      RETURNING last_number`,
-    [siteId, type],
+    { replacements: { siteId, type }, transaction },
   );
 
-  return `${SKU_PREFIX}-${site.rows[0].code}-${typeCode}-${formatNumber(rows[0].last_number)}`;
+  return `${SKU_PREFIX}-${site.code}-${typeCode}-${formatNumber(rows[0].last_number)}`;
 }
+
+module.exports = { SKU_PREFIX, TYPE_CODES, formatNumber, generateSku };

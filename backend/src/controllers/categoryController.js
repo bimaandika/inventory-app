@@ -1,60 +1,57 @@
-import { query } from '../config/db.js';
-import { notFound } from '../utils/httpError.js';
-import { parseId, requireString } from '../utils/validate.js';
+const { Op, fn, col } = require('sequelize');
+const { Category, Inventory } = require('../models');
+const { notFound } = require('../helpers/httpError');
+const { parseId, requireString } = require('../helpers/validate');
 
-/** GET /api/categories?search= */
-export async function list(req, res) {
+/* Lihat: semua peran. Kelola: admin pusat (diatur di routes). */
+
+async function findCategory(id) {
+  const category = await Category.findByPk(id);
+  if (!category) throw notFound('Kategori tidak ditemukan');
+  return category;
+}
+
+/** GET /api/categories?search= — termasuk jumlah barang per kategori. */
+async function list(req, res) {
   const search = (req.query.search || '').trim();
-  const { rows } = await query(
-    `SELECT c.id, c.name, c.created_at, c.updated_at,
-            COUNT(i.id)::int AS total_items
-       FROM categories c
-       LEFT JOIN inventories i ON i.category_id = c.id
-      WHERE ($1 = '' OR c.name ILIKE '%' || $1 || '%')
-      GROUP BY c.id
-      ORDER BY c.name`,
-    [search],
-  );
-  res.json({ data: rows });
+  const categories = await Category.findAll({
+    where: search ? { name: { [Op.iLike]: `%${search}%` } } : {},
+    attributes: {
+      include: [[fn('COUNT', col('inventories.id')), 'total_items']],
+    },
+    include: [{ model: Inventory, as: 'inventories', attributes: [] }],
+    group: ['Category.id'],
+    order: [['name', 'ASC']],
+  });
+
+  res.json({
+    data: categories.map((c) => ({ ...c.toJSON(), total_items: Number(c.get('total_items')) })),
+  });
 }
 
 /** GET /api/categories/:id */
-export async function detail(req, res) {
-  const id = parseId(req.params.id);
-  const { rows } = await query(
-    'SELECT id, name, created_at, updated_at FROM categories WHERE id = $1',
-    [id],
-  );
-  if (!rows[0]) throw notFound('Kategori tidak ditemukan');
-  res.json({ data: rows[0] });
+async function detail(req, res) {
+  res.json({ data: await findCategory(parseId(req.params.id)) });
 }
 
-/** POST /api/categories (admin) — nama kategori unik. */
-export async function create(req, res) {
-  const name = requireString(req.body, 'name', { max: 100 });
-  const { rows } = await query(
-    'INSERT INTO categories (name) VALUES ($1) RETURNING id, name, created_at, updated_at',
-    [name],
-  );
-  res.status(201).json({ message: 'Kategori berhasil dibuat', data: rows[0] });
+/** POST /api/categories — body: { name } (nama unik) */
+async function create(req, res) {
+  const category = await Category.create({ name: requireString(req.body, 'name', { max: 100 }) });
+  res.status(201).json({ message: 'Kategori berhasil dibuat', data: category });
 }
 
-/** PUT /api/categories/:id (admin) */
-export async function update(req, res) {
-  const id = parseId(req.params.id);
-  const name = requireString(req.body, 'name', { max: 100 });
-  const { rows } = await query(
-    'UPDATE categories SET name = $1 WHERE id = $2 RETURNING id, name, created_at, updated_at',
-    [name, id],
-  );
-  if (!rows[0]) throw notFound('Kategori tidak ditemukan');
-  res.json({ message: 'Kategori berhasil diperbarui', data: rows[0] });
+/** PUT /api/categories/:id — body: { name } */
+async function update(req, res) {
+  const category = await findCategory(parseId(req.params.id));
+  await category.update({ name: requireString(req.body, 'name', { max: 100 }) });
+  res.json({ message: 'Kategori berhasil diperbarui', data: category });
 }
 
-/** DELETE /api/categories/:id (admin) — gagal (409) jika masih dipakai inventory. */
-export async function remove(req, res) {
-  const id = parseId(req.params.id);
-  const { rowCount } = await query('DELETE FROM categories WHERE id = $1', [id]);
-  if (!rowCount) throw notFound('Kategori tidak ditemukan');
+/** DELETE /api/categories/:id — gagal (409) jika masih dipakai barang. */
+async function remove(req, res) {
+  const category = await findCategory(parseId(req.params.id));
+  await category.destroy();
   res.json({ message: 'Kategori berhasil dihapus' });
 }
+
+module.exports = { list, detail, create, update, remove };

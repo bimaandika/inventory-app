@@ -1,9 +1,9 @@
-import { Router } from 'express';
-import authRoutes from './authRoutes.js';
-import siteRoutes from './siteRoutes.js';
-import categoryRoutes from './categoryRoutes.js';
-import inventoryRoutes from './inventoryRoutes.js';
-import userRoutes from './userRoutes.js';
+const { Router } = require('express');
+const authRoutes = require('./authRoutes');
+const siteRoutes = require('./siteRoutes');
+const categoryRoutes = require('./categoryRoutes');
+const inventoryRoutes = require('./inventoryRoutes');
+const userRoutes = require('./userRoutes');
 
 const router = Router();
 
@@ -22,4 +22,4 @@ router.use('/users', userRoutes); // admin pusat
 // router.use('/dashboard', dashboardRoutes);
 // router.use('/reports', reportRoutes);             // admin
 
-export default router;
+module.exports = router;
