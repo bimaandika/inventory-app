@@ -1,6 +1,6 @@
 # Case 2 — Pengadaan (Barang Masuk)
 
-> Status: **Disepakati** (12 November 2026)
+> Status: **Disepakati** (12 November 2026) · **Sudah dibuat**: endpoint `/api/goods-in` (lihat `docs/API.md`)
 > Pengguna: **Admin** saja. **Tanpa approval.**
 > **Admin** di dokumen ini = admin site (untuk site-nya sendiri) atau admin pusat. Lihat [Peran & hak akses](peran-hak-akses.md).
 

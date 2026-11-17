@@ -54,7 +54,7 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 | GET | `/inventories?search=&categoryId=&type=&siteId=&includeInactive=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri & barang aktif |
 | GET | `/inventories/:id` | semua | Crew hanya untuk barang aktif di site sendiri |
 | GET | `/inventories/sku/:sku` | semua | Scan SKU |
-| POST | `/inventories` | pusat, admin | Body: `name`, `unit`, `type`, `description`, `categoryId`, `siteId`, `quantity` (stok awal, opsional). SKU dibuat otomatis. Admin site hanya untuk site sendiri |
+| POST | `/inventories` | pusat, admin | Body: `name`, `unit`, `type`, `description`, `categoryId`, `siteId`, `quantity` (stok awal, opsional). SKU dibuat otomatis. Admin site hanya untuk site sendiri. Jika `quantity > 0`, stok awal otomatis tercatat sebagai **barang masuk** (response menyertakan `goodsIn: { id, number }`) |
 | PUT | `/inventories/:id` | pusat, admin | Body sama seperti POST **tanpa** `quantity`. Hanya pusat yang boleh mengganti `siteId` |
 | PATCH | `/inventories/:id/active` | pusat, admin | Body `{ isActive: true/false }` — nonaktifkan / aktifkan kembali |
 | DELETE | `/inventories/:id` | pusat, admin | Hanya untuk barang tanpa riwayat transaksi (409 jika sudah ada → nonaktifkan) |
@@ -88,10 +88,36 @@ Aturan bisnis per case ada di folder `docs/workflow/`:
 
 > Endpoint Cart dan Stock movements di bawah masih rancangan awal dan akan disesuaikan dengan dokumen workflow.
 
-## Transaksi (belum dibuat)
+## Barang Masuk — Case 2 (pusat, admin)
+Aturan: `docs/workflow/case-2-pengadaan-barang-masuk.md`. Nomor: `IN-<site>-<MMYY>-<nomor>`.
 
-Endpoint transaksi (keranjang, permintaan, pengembalian, barang masuk, transfer, peminjaman, adjustment, stock opname) akan ditambahkan bertahap mengikuti:
-- aturan bisnis di `docs/workflow/`
-- struktur data di `docs/erd.md` (tabel `stock_movements`, `stock_movement_items`, `histories`)
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| POST | `/goods-in` | Catat barang masuk. Admin site hanya untuk site sendiri |
+| GET | `/goods-in?siteId=&search=&from=&to=&page=&limit=` | Daftar transaksi (terbaru dulu). `search` mencari nomor & remarks; `from`/`to` format `YYYY-MM-DD` (WIB) |
+| GET | `/goods-in/:id` | Detail: daftar barang + stok sebelum/sesudah + timeline |
+
+Body `POST /goods-in` — satu transaksi untuk satu site, boleh mencampur barang lama dan barang baru:
+```json
+{
+  "siteId": 1,
+  "remarks": "Pengadaan SCM PO-123",
+  "items": [
+    { "inventoryId": 4, "quantity": 20 },
+    { "name": "Sarung Tangan Las", "unit": "pasang", "type": "CONSUMABLE", "categoryId": 4, "description": null, "quantity": 10 }
+  ]
+}
+```
+- Item dengan `inventoryId` = barang yang sudah ada (harus milik site tersebut dan aktif).
+- Item tanpa `inventoryId` = barang baru; otomatis masuk katalog dengan SKU otomatis. Ditolak jika nama sudah ada di site itu.
+- `quantity` > 0. Barang yang sama tidak boleh muncul dua kali dalam satu transaksi.
+- Ditolak (409) jika site sedang **stock opname** untuk jenis barang yang terlibat.
+- Tanpa approval: stok langsung bertambah. Salah input dikoreksi lewat adjustment (Case 4).
+
+Daftar transaksi menyertakan `totalItems` (jumlah baris barang) dan `totalQuantity`.
+
+## Transaksi lain (belum dibuat)
+
+Endpoint transaksi lainnya (keranjang, permintaan, pengembalian, transfer, peminjaman, adjustment, stock opname) akan ditambahkan bertahap mengikuti aturan di `docs/workflow/` dan struktur data di `docs/erd.md`.
 
 Format nomor transaksi: `docs/workflow/nomor-transaksi.md`.

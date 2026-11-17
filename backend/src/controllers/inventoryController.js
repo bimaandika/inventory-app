@@ -1,7 +1,8 @@
 const { Op, ForeignKeyConstraintError } = require('sequelize');
-const { sequelize, Inventory, Category, Site } = require('../models');
+const { sequelize, Inventory, Category, Site, StockMovement } = require('../models');
 const { badRequest, notFound, forbidden, conflict } = require('../helpers/httpError');
 const { generateSku } = require('../services/skuService');
+const { createGoodsIn } = require('../services/goodsInService');
 const { canViewSite, assertCanActOnSite, isPusat } = require('../middlewares/auth');
 const { inventoryImagePath, removeUploadedFile } = require('../config/upload');
 const {
@@ -23,7 +24,8 @@ const {
  *
  * Aturan:
  * - SKU dibuat otomatis (services/skuService.js); dibuat ulang jika site/type berubah.
- * - quantity hanya diisi saat barang dibuat (stok awal); selanjutnya lewat stock movement.
+ * - quantity hanya diisi saat barang dibuat (stok awal, otomatis tercatat sebagai barang masuk);
+ *   selanjutnya lewat stock movement.
  * - Barang yang sudah punya riwayat transaksi tidak bisa dihapus → nonaktifkan.
  */
 
@@ -139,7 +141,11 @@ async function findBySku(req, res) {
   res.json({ data: inventory });
 }
 
-/** POST /api/inventories — quantity opsional sebagai stok awal (default 0). */
+/**
+ * POST /api/inventories — quantity opsional sebagai stok awal (default 0).
+ * Jika quantity > 0, stok awal otomatis tercatat sebagai transaksi barang masuk (GOODS_IN),
+ * supaya setiap stok punya jejak (docs/workflow/case-2-pengadaan-barang-masuk.md, aturan 11).
+ */
 async function create(req, res) {
   const data = readBody(req.body);
   const quantity = parseNonNegativeInt(req.body?.quantity, 'quantity', 0);
@@ -147,13 +153,36 @@ async function create(req, res) {
   await ensureExists(Category, data.categoryId, 'categoryId');
   await ensureExists(Site, data.siteId, 'siteId');
 
-  const id = await sequelize.transaction(async (transaction) => {
+  const { id, goodsInId } = await sequelize.transaction(async (transaction) => {
     const sku = await generateSku(data.siteId, data.type, transaction);
-    const inventory = await Inventory.create({ ...data, sku, quantity }, { transaction });
-    return inventory.id;
+    const inventory = await Inventory.create({ ...data, sku, quantity: 0 }, { transaction });
+
+    let movementId = null;
+    if (quantity > 0) {
+      movementId = await createGoodsIn(
+        {
+          siteId: data.siteId,
+          remarks: 'Stok awal saat barang ditambahkan',
+          items: [{ inventoryId: inventory.id, quantity }],
+          user: req.user,
+        },
+        transaction,
+      );
+    }
+    return { id: inventory.id, goodsInId: movementId };
   });
 
-  res.status(201).json({ message: 'Barang berhasil dibuat', data: await findInventory(id) });
+  const inventory = await findInventory(id);
+  if (!goodsInId) {
+    return res.status(201).json({ message: 'Barang berhasil dibuat', data: inventory });
+  }
+
+  const goodsIn = await StockMovement.findByPk(goodsInId, { attributes: ['id', 'number'] });
+  return res.status(201).json({
+    message: `Barang berhasil dibuat; stok awal tercatat sebagai barang masuk ${goodsIn.number}`,
+    data: inventory,
+    goodsIn,
+  });
 }
 
 /**

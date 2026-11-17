@@ -66,6 +66,10 @@ erDiagram
     enum type PK
     int last_number
   }
+  NUMBER_SEQUENCES {
+    varchar prefix PK "misal IN-GMG-1126"
+    int last_number
+  }
   STOCK_MOVEMENTS {
     int id PK
     varchar number UK "format ditentukan Bima"
@@ -180,5 +184,8 @@ Skema dibuat oleh **migrasi Sequelize** di `backend/migrations/` (satu file per 
 | `stock_movements` | `StockMovement` | `…06-create-stock-movements.js` |
 | `stock_movement_items` | `StockMovementItem` | `…07-create-stock-movement-items.js` |
 | `histories` | `History` | `…08-create-histories.js` |
+| `number_sequences` | `NumberSequence` | `…09-create-number-sequences.js` |
+
+`number_sequences` (ditambahkan 17 Nov 2026) menyimpan nomor urut terakhir per awalan nomor transaksi, misal `IN-GMG-1126` → 3, supaya nomor tidak bentrok saat dua transaksi dibuat bersamaan (lihat `docs/workflow/nomor-transaksi.md`).
 
 Aturan yang tidak bisa ditulis lewat opsi Sequelize biasa (CHECK constraint, partial unique index, index `LOWER(name)`) dibuat dengan `queryInterface.sequelize.query()` di dalam file migrasinya.

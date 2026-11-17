@@ -1,0 +1,96 @@
+### Contoh request — Case 2: Barang Masuk
+### Jalankan dengan VS Code extension "REST Client", atau tiru di Postman.
+
+@baseUrl = http://localhost:5050/api
+
+### Login admin pusat (atau admin site)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "admin123" }
+
+###
+@token = TEMPEL_TOKEN_DI_SINI
+
+### ---------- CATAT BARANG MASUK ----------
+### Barang lama + barang baru dalam satu transaksi (site Gunung Megang)
+### Ganti inventoryId & categoryId sesuai data di databasemu.
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "siteId": 1,
+  "remarks": "Pengadaan SCM PO-123",
+  "items": [
+    { "inventoryId": 4, "quantity": 20 },
+    { "name": "Sarung Tangan Las", "unit": "pasang", "type": "CONSUMABLE", "categoryId": 4, "quantity": 10 }
+  ]
+}
+
+### Hanya restock barang yang sudah ada
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "siteId": 1,
+  "remarks": "Petty cash, nota Toko Maju",
+  "items": [ { "inventoryId": 2, "quantity": 1 } ]
+}
+
+### ---------- DAFTAR & DETAIL ----------
+GET {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+
+### Filter site, kata kunci, dan rentang tanggal (WIB)
+GET {{baseUrl}}/goods-in?siteId=1&search=SCM&from=2026-11-01&to=2026-11-30
+Authorization: Bearer {{token}}
+
+### Detail (ganti id) — berisi stok sebelum/sesudah tiap barang + timeline
+GET {{baseUrl}}/goods-in/1
+Authorization: Bearer {{token}}
+
+### ---------- TAMBAH BARANG DENGAN STOK AWAL ----------
+### quantity > 0 → otomatis tercatat sebagai barang masuk (lihat field goodsIn di response)
+POST {{baseUrl}}/inventories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "name": "Tang Kombinasi", "unit": "ea", "type": "NON_CONSUMABLE", "categoryId": 1, "siteId": 1, "quantity": 2 }
+
+### ---------- UJI ERROR YANG DIHARAPKAN ----------
+### items kosong → 400
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "siteId": 1, "items": [] }
+
+### quantity 0 → 400
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "siteId": 1, "items": [ { "inventoryId": 4, "quantity": 0 } ] }
+
+### Barang yang sama dua kali → 400
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "siteId": 1, "items": [ { "inventoryId": 4, "quantity": 1 }, { "inventoryId": 4, "quantity": 2 } ] }
+
+### Barang milik site lain (misal id 5 milik POMS) → 400
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "siteId": 1, "items": [ { "inventoryId": 5, "quantity": 1 } ] }
+
+### Barang "baru" padahal namanya sudah ada di site → 400
+POST {{baseUrl}}/goods-in
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "siteId": 1, "items": [ { "name": "Barton Chart", "unit": "ea", "type": "CONSUMABLE", "categoryId": 6, "quantity": 5 } ] }
