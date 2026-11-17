@@ -166,6 +166,8 @@ Kolom khusus header:
 
 ## Implementasi
 
+> Nama kolom di dokumen ini adalah nama **kolom database** (snake_case). Di model Sequelize dan di API, namanya camelCase: `site_id` → `siteId`, `is_active` → `isActive`, `id_user` → `idUser`, `qty_approved` → `qtyApproved`, dan seterusnya (opsi `underscored: true`).
+
 Skema dibuat oleh **migrasi Sequelize** di `backend/migrations/` (satu file per tabel), dan dipetakan ke model di `backend/src/models/`:
 
 | Tabel | Model | Migrasi |

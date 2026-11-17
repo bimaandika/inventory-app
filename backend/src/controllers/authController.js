@@ -6,7 +6,7 @@ const { badRequest, unauthorized, forbidden, notFound } = require('../helpers/ht
 /** Profil user beserta site-nya (password otomatis tidak ikut, lihat models/user.js). */
 const findProfile = (id) =>
   User.findByPk(id, {
-    attributes: ['id', 'username', 'name', 'role', 'site_id'],
+    attributes: ['id', 'username', 'name', 'role', 'siteId'],
     include: [{ model: Site, as: 'site', attributes: ['id', 'name', 'code'] }],
   });
 
@@ -19,7 +19,7 @@ async function login(req, res) {
   if (!user || !(await comparePassword(password, user.password))) {
     throw unauthorized('Username atau password salah');
   }
-  if (!user.is_active) throw forbidden('Akun Anda sudah dinonaktifkan. Hubungi admin.');
+  if (!user.isActive) throw forbidden('Akun Anda sudah dinonaktifkan. Hubungi admin.');
 
   res.json({ token: signToken(user), user: await findProfile(user.id) });
 }
@@ -31,18 +31,18 @@ async function me(req, res) {
   res.json(profile);
 }
 
-/** PATCH /api/auth/password — body: { old_password, new_password } */
+/** PATCH /api/auth/password — body: { oldPassword, newPassword } */
 async function changePassword(req, res) {
-  const { old_password, new_password } = req.body || {};
-  if (!old_password || !new_password) throw badRequest('Password lama dan baru wajib diisi');
-  if (String(new_password).length < 6) throw badRequest('Password baru minimal 6 karakter');
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) throw badRequest('Password lama dan baru wajib diisi');
+  if (String(newPassword).length < 6) throw badRequest('Password baru minimal 6 karakter');
 
   const user = await User.findByPk(req.user.id);
-  if (!user || !(await comparePassword(old_password, user.password))) {
+  if (!user || !(await comparePassword(oldPassword, user.password))) {
     throw badRequest('Password lama salah');
   }
 
-  await user.update({ password: new_password }); // di-hash oleh hook model
+  await user.update({ password: newPassword }); // di-hash oleh hook model
   res.json({ message: 'Password berhasil diubah' });
 }
 

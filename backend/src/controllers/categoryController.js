@@ -17,14 +17,14 @@ async function list(req, res) {
   const categories = await Category.findAll({
     where: search ? { name: { [Op.iLike]: `%${search}%` } } : {},
     attributes: {
-      include: [[fn('COUNT', col('inventories.id')), 'total_items']],
+      include: [[fn('COUNT', col('inventories.id')), 'totalItems']],
     },
     include: [{ model: Inventory, as: 'inventories', attributes: [] }],
     group: ['Category.id'],
     order: [['name', 'ASC']],
   });
 
-  const rows = categories.map((c) => ({ ...c.toJSON(), total_items: Number(c.get('total_items')) }));
+  const rows = categories.map((c) => ({ ...c.toJSON(), totalItems: Number(c.get('totalItems')) }));
   res.json(
     listResponse(rows, {
       empty: 'Belum ada data kategori',

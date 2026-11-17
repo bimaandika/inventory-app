@@ -5,9 +5,9 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Inventory extends Model {
     static associate(models) {
-      Inventory.belongsTo(models.Category, { foreignKey: 'category_id', as: 'category' });
-      Inventory.belongsTo(models.Site, { foreignKey: 'site_id', as: 'site' });
-      Inventory.hasMany(models.StockMovementItem, { foreignKey: 'inventory_id', as: 'movementItems' });
+      Inventory.belongsTo(models.Category, { foreignKey: 'categoryId', as: 'category' });
+      Inventory.belongsTo(models.Site, { foreignKey: 'siteId', as: 'site' });
+      Inventory.hasMany(models.StockMovementItem, { foreignKey: 'inventoryId', as: 'movementItems' });
     }
   }
 
@@ -17,12 +17,12 @@ module.exports = (sequelize, DataTypes) => {
       unit: { type: DataTypes.STRING(30), allowNull: false },
       type: { type: DataTypes.ENUM('CONSUMABLE', 'NON_CONSUMABLE'), allowNull: false },
       description: { type: DataTypes.TEXT, allowNull: true },
-      category_id: { type: DataTypes.INTEGER, allowNull: false },
-      site_id: { type: DataTypes.INTEGER, allowNull: false },
+      categoryId: { type: DataTypes.INTEGER, allowNull: false },
+      siteId: { type: DataTypes.INTEGER, allowNull: false },
       sku: { type: DataTypes.STRING(50), allowNull: false, unique: true },
       image: { type: DataTypes.STRING(255), allowNull: true },
       quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
-      is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+      isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     },
     { sequelize, modelName: 'Inventory', tableName: 'inventories', underscored: true },
   );

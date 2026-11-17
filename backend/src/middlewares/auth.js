@@ -15,7 +15,7 @@ const ROLES = ['admin_pusat', 'admin', 'crew'];
  * lalu ambil data user terbaru dari database, sehingga perubahan
  * role/site/nonaktif langsung berlaku tanpa menunggu token kedaluwarsa.
  *
- * Hasil: req.user = { id, username, name, role, site_id }
+ * Hasil: req.user = { id, username, name, role, siteId }
  */
 async function authenticate(req, res, next) {
   try {
@@ -30,17 +30,17 @@ async function authenticate(req, res, next) {
     }
 
     const user = await User.findByPk(payload.id, {
-      attributes: ['id', 'username', 'name', 'role', 'site_id', 'is_active'],
+      attributes: ['id', 'username', 'name', 'role', 'siteId', 'isActive'],
     });
     if (!user) throw unauthorized('Akun tidak ditemukan');
-    if (!user.is_active) throw unauthorized('Akun Anda sudah dinonaktifkan');
+    if (!user.isActive) throw unauthorized('Akun Anda sudah dinonaktifkan');
 
     req.user = {
       id: user.id,
       username: user.username,
       name: user.name,
       role: user.role,
-      site_id: user.site_id,
+      siteId: user.siteId,
     };
     next();
   } catch (err) {
@@ -65,10 +65,10 @@ function authorize(...roles) {
 const isPusat = (user) => user?.role === 'admin_pusat';
 
 /** Site yang boleh DILIHAT: crew hanya site sendiri; admin & pusat semua site. */
-const canViewSite = (user, siteId) => user.role !== 'crew' || user.site_id === siteId;
+const canViewSite = (user, siteId) => user.role !== 'crew' || user.siteId === siteId;
 
 /** Site tempat user boleh BERTINDAK: pusat semua site; admin/crew hanya site sendiri. */
-const canActOnSite = (user, siteId) => isPusat(user) || user.site_id === siteId;
+const canActOnSite = (user, siteId) => isPusat(user) || user.siteId === siteId;
 
 /** Lempar 403 jika user tidak boleh bertindak di site tersebut. */
 function assertCanActOnSite(user, siteId, message) {

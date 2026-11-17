@@ -7,9 +7,9 @@ module.exports = (sequelize, DataTypes) => {
 
   SkuSequence.init(
     {
-      site_id: { type: DataTypes.INTEGER, primaryKey: true },
+      siteId: { type: DataTypes.INTEGER, primaryKey: true },
       type: { type: DataTypes.ENUM('CONSUMABLE', 'NON_CONSUMABLE'), primaryKey: true },
-      last_number: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+      lastNumber: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     },
     {
       sequelize,

@@ -8,6 +8,8 @@ Peran (lihat `docs/workflow/peran-hak-akses.md`):
 - **crew** = `crew` — hanya site sendiri
 - **semua** = ketiga peran di atas
 
+**Penamaan field:** seluruh API (body request, query parameter, dan response) memakai **camelCase**, misal `siteId`, `categoryId`, `isActive`, `createdAt`. Kolom di database tetap snake_case (`site_id`, `is_active`); Sequelize menerjemahkannya otomatis.
+
 Daftar yang kosong tetap mengembalikan `data: []`, ditambah `message` yang menjelaskan alasannya, misal `"Belum ada data barang"` atau `"Tidak ada barang yang cocok dengan pencarian atau filter"`.
 
 Response objek barang & user menyertakan relasi bertingkat, misal `"site": { "id", "name", "code" }` dan `"category": { "id", "name" }`.
@@ -18,20 +20,20 @@ Token hanya berisi `id` user; role, site, dan status aktif selalu dibaca ulang d
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
 | POST | `/auth/login` | publik | Body `{ username, password }` → `{ token, user }`. User nonaktif ditolak (403) |
-| GET | `/auth/me` | semua | Profil: `id`, `username`, `name`, `role`, `site_id`, `site` |
-| PATCH | `/auth/password` | semua | Body `{ old_password, new_password }` |
+| GET | `/auth/me` | semua | Profil: `id`, `username`, `name`, `role`, `siteId`, `site` |
+| PATCH | `/auth/password` | semua | Body `{ oldPassword, newPassword }` |
 
 ## Users (pusat)
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/users?role=&site_id=&search=&include_inactive=&page=&limit=` | Daftar user (default hanya yang aktif) |
+| GET | `/users?role=&siteId=&search=&includeInactive=&page=&limit=` | Daftar user (default hanya yang aktif) |
 | GET | `/users/:id` | Detail |
-| POST | `/users` | Body `{ username, name, password, role, site_id }` |
-| PUT | `/users/:id` | Body `{ name, role, site_id }` (username tidak bisa diubah) |
-| PATCH | `/users/:id/password` | Body `{ new_password }` — reset password |
-| PATCH | `/users/:id/active` | Body `{ is_active: true/false }` — user tidak dihapus, tetapi dinonaktifkan |
+| POST | `/users` | Body `{ username, name, password, role, siteId }` |
+| PUT | `/users/:id` | Body `{ name, role, siteId }` (username tidak bisa diubah) |
+| PATCH | `/users/:id/password` | Body `{ newPassword }` — reset password |
+| PATCH | `/users/:id/active` | Body `{ isActive: true/false }` — user tidak dihapus, tetapi dinonaktifkan |
 
-- `role`: `admin_pusat` (tanpa `site_id`), `admin` / `crew` (wajib `site_id`).
+- `role`: `admin_pusat` (tanpa `siteId`), `admin` / `crew` (wajib `siteId`).
 - `username`: 3–50 karakter, huruf kecil/angka/`.`/`_`/`-` (otomatis dijadikan huruf kecil). Password minimal 6 karakter.
 - Tidak bisa menonaktifkan atau mengubah role akun sendiri; harus selalu ada minimal satu admin pusat aktif.
 
@@ -49,12 +51,12 @@ Satu baris = satu barang di satu site. Barang yang sama di dua site disimpan seb
 
 | Method | Endpoint | Role | Keterangan |
 |---|---|---|---|
-| GET | `/inventories?search=&category_id=&type=&site_id=&include_inactive=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri & barang aktif |
+| GET | `/inventories?search=&categoryId=&type=&siteId=&includeInactive=&page=&limit=` | semua | `search` mencari nama & SKU. Crew otomatis dibatasi ke site sendiri & barang aktif |
 | GET | `/inventories/:id` | semua | Crew hanya untuk barang aktif di site sendiri |
 | GET | `/inventories/sku/:sku` | semua | Scan SKU |
-| POST | `/inventories` | pusat, admin | Body: `name`, `unit`, `type`, `description`, `category_id`, `site_id`, `quantity` (stok awal, opsional). SKU dibuat otomatis. Admin site hanya untuk site sendiri |
-| PUT | `/inventories/:id` | pusat, admin | Body sama seperti POST **tanpa** `quantity`. Hanya pusat yang boleh mengganti `site_id` |
-| PATCH | `/inventories/:id/active` | pusat, admin | Body `{ is_active: true/false }` — nonaktifkan / aktifkan kembali |
+| POST | `/inventories` | pusat, admin | Body: `name`, `unit`, `type`, `description`, `categoryId`, `siteId`, `quantity` (stok awal, opsional). SKU dibuat otomatis. Admin site hanya untuk site sendiri |
+| PUT | `/inventories/:id` | pusat, admin | Body sama seperti POST **tanpa** `quantity`. Hanya pusat yang boleh mengganti `siteId` |
+| PATCH | `/inventories/:id/active` | pusat, admin | Body `{ isActive: true/false }` — nonaktifkan / aktifkan kembali |
 | DELETE | `/inventories/:id` | pusat, admin | Hanya untuk barang tanpa riwayat transaksi (409 jika sudah ada → nonaktifkan) |
 | PATCH | `/inventories/:id/image` | pusat, admin | Upload foto kondisi: **form-data**, field `image` (JPG/PNG/WEBP, maks `UPLOAD_MAX_MB`, default 2 MB). Foto lama dihapus |
 | DELETE | `/inventories/:id/image` | pusat, admin | Hapus foto tanpa menghapus barang |
@@ -65,7 +67,7 @@ Foto bisa dibuka di `http://localhost:5050<image>`, misal `http://localhost:5050
 - **SKU otomatis**: `MEGS-<kode site>-<kode jenis>-<nomor urut>`, contoh `MEGS-GMG-ET-001`.
   - Kode jenis: `NON_CONSUMABLE` = `ET`, `CONSUMABLE` = `SM`.
   - Nomor urut per site per jenis, minimal 3 digit; nomor yang pernah dipakai tidak dipakai ulang.
-  - Jika `site_id` atau `type` barang diubah, SKU dibuat ulang mengikuti site/jenis baru.
+  - Jika `siteId` atau `type` barang diubah, SKU dibuat ulang mengikuti site/jenis baru.
   - Mengirim `sku` di body akan ditolak (400).
 - Nama barang unik per site (tidak peka huruf besar/kecil).
 - `quantity` hanya diisi saat barang dibuat; perubahan berikutnya lewat stock movement.
@@ -86,39 +88,10 @@ Aturan bisnis per case ada di folder `docs/workflow/`:
 
 > Endpoint Cart dan Stock movements di bawah masih rancangan awal dan akan disesuaikan dengan dokumen workflow.
 
-## Cart
-| Method | Endpoint | Keterangan |
-|---|---|---|
-| GET | `/cart` | Isi cart sendiri (`in_cart`) |
-| POST | `/cart` | `{ id_inventory, quantity }` (barang di site sendiri) |
-| PATCH | `/cart/:id` | Ubah quantity |
-| DELETE | `/cart/:id` | Hapus item |
-| DELETE | `/cart` | Kosongkan |
-| POST | `/cart/checkout` | `{ reason }` → buat movement `pending`, isi `id_sm` & `receipt` |
+## Transaksi (belum dibuat)
 
-## Stock movements
-| Method | Endpoint | Role | Keterangan |
-|---|---|---|---|
-| GET | `/stock-movements?status=&type=&from=&to=` | semua | Crew hanya miliknya |
-| GET | `/stock-movements/:id` | semua | Detail + item + history |
-| PATCH | `/stock-movements/:id/approve` | admin | Transaksi: kurangi stok, status, history |
-| PATCH | `/stock-movements/:id/reject` | admin | `{ remarks }` |
-| PATCH | `/stock-movements/:id/cancel` | crew | Hanya saat `pending` |
-| PATCH | `/stock-movements/:id/complete` | crew | Konfirmasi diterima |
-| POST | `/stock-movements/stock-in` | admin | Restock (`IN`) / penyesuaian (`ADJUSTMENT`) |
+Endpoint transaksi (keranjang, permintaan, pengembalian, barang masuk, transfer, peminjaman, adjustment, stock opname) akan ditambahkan bertahap mengikuti:
+- aturan bisnis di `docs/workflow/`
+- struktur data di `docs/erd.md` (tabel `stock_movements`, `stock_movement_items`, `histories`)
 
-## History, dashboard, laporan
-| Method | Endpoint | Role |
-|---|---|---|
-| GET | `/stock-movements/:id/history` | semua |
-| GET | `/histories?from=&to=` | admin |
-| GET | `/dashboard` | semua |
-| GET | `/reports/movements?from=&to=&site_id=&format=csv` | admin |
-| GET | `/reports/low-stock?threshold=` | admin |
-
-## Status
-```
-Cart:           in_cart → submitted
-Stock movement: pending → approved → completed
-                pending → rejected | cancelled
-```
+Format nomor transaksi menunggu keputusan Bima.

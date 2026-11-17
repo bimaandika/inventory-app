@@ -5,18 +5,18 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class History extends Model {
     static associate(models) {
-      History.belongsTo(models.StockMovement, { foreignKey: 'id_sm', as: 'movement' });
-      History.belongsTo(models.User, { foreignKey: 'id_user', as: 'user' });
+      History.belongsTo(models.StockMovement, { foreignKey: 'idSm', as: 'movement' });
+      History.belongsTo(models.User, { foreignKey: 'idUser', as: 'user' });
     }
   }
 
   History.init(
     {
-      id_sm: { type: DataTypes.INTEGER, allowNull: false },
+      idSm: { type: DataTypes.INTEGER, allowNull: false },
       action: { type: DataTypes.STRING(30), allowNull: false },
       status: { type: DataTypes.STRING(30), allowNull: true },
       remarks: { type: DataTypes.TEXT, allowNull: true },
-      id_user: { type: DataTypes.INTEGER, allowNull: false },
+      idUser: { type: DataTypes.INTEGER, allowNull: false },
       date: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     },
     { sequelize, modelName: 'History', tableName: 'histories', underscored: true },

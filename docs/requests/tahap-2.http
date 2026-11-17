@@ -13,22 +13,22 @@ Content-Type: application/json
 @tokenPusat = TEMPEL_TOKEN_ADMIN_PUSAT
 
 ### ---------- KELOLA USER (admin pusat) ----------
-### Buat admin site Gunung Megang (site_id 1)
+### Buat admin site Gunung Megang (siteId 1)
 POST {{baseUrl}}/users
 Authorization: Bearer {{tokenPusat}}
 Content-Type: application/json
 
-{ "username": "admin.gmg", "name": "Admin Gunung Megang", "password": "rahasia123", "role": "admin", "site_id": 1 }
+{ "username": "admin.gmg", "name": "Admin Gunung Megang", "password": "rahasia123", "role": "admin", "siteId": 1 }
 
 ### Buat crew Gunung Megang
 POST {{baseUrl}}/users
 Authorization: Bearer {{tokenPusat}}
 Content-Type: application/json
 
-{ "username": "crew.gmg1", "name": "Budi", "password": "rahasia123", "role": "crew", "site_id": 1 }
+{ "username": "crew.gmg1", "name": "Budi", "password": "rahasia123", "role": "crew", "siteId": 1 }
 
-### Daftar user (filter: role, site_id, search; tambah include_inactive=true untuk melihat yang nonaktif)
-GET {{baseUrl}}/users?site_id=1
+### Daftar user (filter: role, siteId, search; tambah includeInactive=true untuk melihat yang nonaktif)
+GET {{baseUrl}}/users?siteId=1
 Authorization: Bearer {{tokenPusat}}
 
 ### Ubah nama / role / site user (ganti :id)
@@ -36,21 +36,21 @@ PUT {{baseUrl}}/users/2
 Authorization: Bearer {{tokenPusat}}
 Content-Type: application/json
 
-{ "name": "Admin GMG", "role": "admin", "site_id": 1 }
+{ "name": "Admin GMG", "role": "admin", "siteId": 1 }
 
 ### Reset password user
 PATCH {{baseUrl}}/users/3/password
 Authorization: Bearer {{tokenPusat}}
 Content-Type: application/json
 
-{ "new_password": "baru12345" }
+{ "newPassword": "baru12345" }
 
 ### Nonaktifkan user (aktifkan lagi dengan true)
 PATCH {{baseUrl}}/users/3/active
 Authorization: Bearer {{tokenPusat}}
 Content-Type: application/json
 
-{ "is_active": false }
+{ "isActive": false }
 
 ### ---------- LOGIN SEBAGAI ADMIN SITE & CREW ----------
 POST {{baseUrl}}/auth/login
@@ -76,14 +76,14 @@ POST {{baseUrl}}/inventories
 Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
-{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "category_id": 1, "site_id": 1 }
+{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "categoryId": 1, "siteId": 1 }
 
 ### Admin site tambah barang di site lain → 403
 POST {{baseUrl}}/inventories
 Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
-{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "category_id": 1, "site_id": 2 }
+{ "name": "Kunci Inggris", "unit": "unit", "type": "NON_CONSUMABLE", "categoryId": 1, "siteId": 2 }
 
 ### Admin site membuat kategori → 403 (khusus admin pusat)
 POST {{baseUrl}}/categories
@@ -96,8 +96,8 @@ Content-Type: application/json
 GET {{baseUrl}}/inventories
 Authorization: Bearer {{tokenAdmin}}
 
-### Crew melihat barang → hanya site sendiri & aktif (site_id diabaikan)
-GET {{baseUrl}}/inventories?site_id=2
+### Crew melihat barang → hanya site sendiri & aktif (siteId diabaikan)
+GET {{baseUrl}}/inventories?siteId=2
 Authorization: Bearer {{tokenCrew}}
 
 ### Crew menambah barang → 403
@@ -105,7 +105,7 @@ POST {{baseUrl}}/inventories
 Authorization: Bearer {{tokenCrew}}
 Content-Type: application/json
 
-{ "name": "X", "unit": "pcs", "type": "CONSUMABLE", "category_id": 1, "site_id": 1 }
+{ "name": "X", "unit": "pcs", "type": "CONSUMABLE", "categoryId": 1, "siteId": 1 }
 
 ### Crew membuka kelola user → 403
 GET {{baseUrl}}/users
@@ -116,10 +116,10 @@ PATCH {{baseUrl}}/inventories/1/active
 Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
-{ "is_active": false }
+{ "isActive": false }
 
 ### Admin melihat barang termasuk yang nonaktif
-GET {{baseUrl}}/inventories?include_inactive=true
+GET {{baseUrl}}/inventories?includeInactive=true
 Authorization: Bearer {{tokenAdmin}}
 
 ### ---------- UPLOAD FOTO (disiapkan; dipakai saat foto sudah ada) ----------

@@ -65,7 +65,7 @@ function listResponse(rows, messages, filtered = false) {
 /** Response daftar ber-pagination. Menambahkan `message` jika kosong. */
 function paginated(rows, count, { page, limit }, messages, filtered = false) {
   const totalPages = Math.ceil(count / limit);
-  const body = { data: rows, meta: { page, limit, total: count, total_pages: totalPages } };
+  const body = { data: rows, meta: { page, limit, total: count, totalPages: totalPages } };
   if (rows.length > 0) return body;
 
   const message =

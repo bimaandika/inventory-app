@@ -5,7 +5,7 @@ const { hashPassword } = require('../helpers/bcrypt');
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     static associate(models) {
-      User.belongsTo(models.Site, { foreignKey: 'site_id', as: 'site' });
+      User.belongsTo(models.Site, { foreignKey: 'siteId', as: 'site' });
     }
 
     /** Jangan pernah mengirim password ke response. */
@@ -26,8 +26,8 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 'crew',
       },
-      site_id: { type: DataTypes.INTEGER, allowNull: true },
-      is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+      siteId: { type: DataTypes.INTEGER, allowNull: true },
+      isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     },
     {
       sequelize,

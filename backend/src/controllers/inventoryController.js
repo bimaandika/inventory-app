@@ -55,7 +55,7 @@ async function findInventory(id) {
 
 /** Crew: hanya barang aktif di site sendiri. */
 function assertCanView(user, inventory) {
-  if (!canViewSite(user, inventory.site_id) || (user.role === 'crew' && !inventory.is_active)) {
+  if (!canViewSite(user, inventory.siteId) || (user.role === 'crew' && !inventory.isActive)) {
     throw forbidden('Anda hanya dapat melihat barang di site Anda sendiri');
   }
 }
@@ -74,13 +74,13 @@ function readBody(body) {
     unit: requireString(body, 'unit', { max: 30 }),
     type: parseType(body?.type),
     description: optionalString(body, 'description'),
-    category_id: parseId(body?.category_id, 'category_id'),
-    site_id: parseId(body?.site_id, 'site_id'),
+    categoryId: parseId(body?.categoryId, 'categoryId'),
+    siteId: parseId(body?.siteId, 'siteId'),
   };
 }
 
 /**
- * GET /api/inventories?search=&category_id=&type=&site_id=&include_inactive=&page=&limit=
+ * GET /api/inventories?search=&categoryId=&type=&siteId=&includeInactive=&page=&limit=
  * - search mencari di nama barang dan SKU
  * - crew selalu dibatasi ke site-nya dan hanya barang aktif
  */
@@ -93,14 +93,14 @@ async function list(req, res) {
   if (search) {
     where[Op.or] = [{ name: { [Op.iLike]: `%${search}%` } }, { sku: { [Op.iLike]: `%${search}%` } }];
   }
-  if (req.query.category_id) where.category_id = parseId(req.query.category_id, 'category_id');
+  if (req.query.categoryId) where.categoryId = parseId(req.query.categoryId, 'categoryId');
   const type = parseType(req.query.type, { required: false });
   if (type) where.type = type;
 
-  if (isCrew) where.site_id = req.user.site_id;
-  else if (req.query.site_id) where.site_id = parseId(req.query.site_id, 'site_id');
+  if (isCrew) where.siteId = req.user.siteId;
+  else if (req.query.siteId) where.siteId = parseId(req.query.siteId, 'siteId');
 
-  if (isCrew || req.query.include_inactive !== 'true') where.is_active = true;
+  if (isCrew || req.query.includeInactive !== 'true') where.isActive = true;
 
   const { rows, count } = await Inventory.findAndCountAll({
     where,
@@ -114,7 +114,7 @@ async function list(req, res) {
     distinct: true,
   });
 
-  const filtered = Boolean(search || req.query.category_id || type || (!isCrew && req.query.site_id));
+  const filtered = Boolean(search || req.query.categoryId || type || (!isCrew && req.query.siteId));
   res.json(
     paginated(rows, count, pagination, {
       empty: isCrew ? 'Belum ada barang di site Anda' : 'Belum ada data barang',
@@ -143,12 +143,12 @@ async function findBySku(req, res) {
 async function create(req, res) {
   const data = readBody(req.body);
   const quantity = parseNonNegativeInt(req.body?.quantity, 'quantity', 0);
-  assertCanActOnSite(req.user, data.site_id, 'Anda hanya dapat menambah barang di site Anda sendiri');
-  await ensureExists(Category, data.category_id, 'category_id');
-  await ensureExists(Site, data.site_id, 'site_id');
+  assertCanActOnSite(req.user, data.siteId, 'Anda hanya dapat menambah barang di site Anda sendiri');
+  await ensureExists(Category, data.categoryId, 'categoryId');
+  await ensureExists(Site, data.siteId, 'siteId');
 
   const id = await sequelize.transaction(async (transaction) => {
-    const sku = await generateSku(data.site_id, data.type, transaction);
+    const sku = await generateSku(data.siteId, data.type, transaction);
     const inventory = await Inventory.create({ ...data, sku, quantity }, { transaction });
     return inventory.id;
   });
@@ -166,22 +166,22 @@ async function update(req, res) {
     throw badRequest('quantity tidak bisa diubah lewat endpoint ini; gunakan stock movement');
   }
   const data = readBody(req.body);
-  await ensureExists(Category, data.category_id, 'category_id');
-  await ensureExists(Site, data.site_id, 'site_id');
+  await ensureExists(Category, data.categoryId, 'categoryId');
+  await ensureExists(Site, data.siteId, 'siteId');
 
   await sequelize.transaction(async (transaction) => {
     const inventory = await Inventory.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
     if (!inventory) throw notFound('Barang tidak ditemukan');
 
-    assertCanActOnSite(req.user, inventory.site_id, 'Anda hanya dapat mengubah barang di site Anda sendiri');
-    if (inventory.site_id !== data.site_id && !isPusat(req.user)) {
+    assertCanActOnSite(req.user, inventory.siteId, 'Anda hanya dapat mengubah barang di site Anda sendiri');
+    if (inventory.siteId !== data.siteId && !isPusat(req.user)) {
       throw forbidden('Memindahkan barang ke site lain dilakukan lewat transfer');
     }
 
     // SKU memuat kode site & jenis, jadi dibuat ulang jika salah satunya berubah
     const sku =
-      inventory.site_id !== data.site_id || inventory.type !== data.type
-        ? await generateSku(data.site_id, data.type, transaction)
+      inventory.siteId !== data.siteId || inventory.type !== data.type
+        ? await generateSku(data.siteId, data.type, transaction)
         : inventory.sku;
 
     await inventory.update({ ...data, sku }, { transaction });
@@ -190,13 +190,13 @@ async function update(req, res) {
   res.json({ message: 'Barang berhasil diperbarui', data: await findInventory(id) });
 }
 
-/** PATCH /api/inventories/:id/active — body: { is_active: true | false } */
+/** PATCH /api/inventories/:id/active — body: { isActive: true | false } */
 async function setActive(req, res) {
-  const isActive = parseBoolean(req.body?.is_active, 'is_active');
+  const isActive = parseBoolean(req.body?.isActive, 'isActive');
   const inventory = await findInventory(parseId(req.params.id));
-  assertCanActOnSite(req.user, inventory.site_id, 'Anda hanya dapat mengubah barang di site Anda sendiri');
+  assertCanActOnSite(req.user, inventory.siteId, 'Anda hanya dapat mengubah barang di site Anda sendiri');
 
-  await inventory.update({ is_active: isActive });
+  await inventory.update({ isActive: isActive });
   res.json({
     message: isActive ? 'Barang diaktifkan kembali' : 'Barang dinonaktifkan',
     data: inventory,
@@ -209,7 +209,7 @@ async function setActive(req, res) {
  */
 async function remove(req, res) {
   const inventory = await findInventory(parseId(req.params.id));
-  assertCanActOnSite(req.user, inventory.site_id, 'Anda hanya dapat menghapus barang di site Anda sendiri');
+  assertCanActOnSite(req.user, inventory.siteId, 'Anda hanya dapat menghapus barang di site Anda sendiri');
 
   try {
     await inventory.destroy();
@@ -236,7 +236,7 @@ async function uploadImage(req, res) {
 
   try {
     const inventory = await findInventory(parseId(req.params.id));
-    assertCanActOnSite(req.user, inventory.site_id, 'Anda hanya dapat mengubah barang di site Anda sendiri');
+    assertCanActOnSite(req.user, inventory.siteId, 'Anda hanya dapat mengubah barang di site Anda sendiri');
 
     const oldPath = inventory.image;
     await inventory.update({ image: newPath });
@@ -252,7 +252,7 @@ async function uploadImage(req, res) {
 /** DELETE /api/inventories/:id/image — hapus foto tanpa menghapus barangnya. */
 async function removeImage(req, res) {
   const inventory = await findInventory(parseId(req.params.id));
-  assertCanActOnSite(req.user, inventory.site_id, 'Anda hanya dapat mengubah barang di site Anda sendiri');
+  assertCanActOnSite(req.user, inventory.siteId, 'Anda hanya dapat mengubah barang di site Anda sendiri');
   if (!inventory.image) throw badRequest('Barang ini belum punya foto');
 
   const oldPath = inventory.image;

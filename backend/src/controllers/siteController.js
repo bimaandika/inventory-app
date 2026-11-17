@@ -26,7 +26,7 @@ async function findSite(id) {
 
 /** GET /api/sites — crew hanya melihat site-nya sendiri. */
 async function list(req, res) {
-  const where = req.user.role === 'crew' ? { id: req.user.site_id } : {};
+  const where = req.user.role === 'crew' ? { id: req.user.siteId } : {};
   const sites = await Site.findAll({ where, order: [['name', 'ASC']] });
   res.json(listResponse(sites, { empty: 'Belum ada data site' }));
 }
@@ -38,10 +38,10 @@ async function detail(req, res) {
 
   const site = await findSite(id);
   const [totalUsers, totalItems] = await Promise.all([
-    User.count({ where: { site_id: id } }),
-    Inventory.count({ where: { site_id: id } }),
+    User.count({ where: { siteId: id } }),
+    Inventory.count({ where: { siteId: id } }),
   ]);
-  res.json({ data: { ...site.toJSON(), total_users: totalUsers, total_items: totalItems } });
+  res.json({ data: { ...site.toJSON(), totalUsers: totalUsers, totalItems: totalItems } });
 }
 
 /** POST /api/sites — body: { name, code } */
@@ -62,7 +62,7 @@ async function update(req, res) {
   const name = requireString(req.body, 'name', { max: 100 });
   const code = readCode(req.body);
 
-  if (code !== site.code && (await Inventory.count({ where: { site_id: site.id } })) > 0) {
+  if (code !== site.code && (await Inventory.count({ where: { siteId: site.id } })) > 0) {
     throw conflict('Kode site tidak bisa diubah karena sudah dipakai di SKU barang');
   }
 
