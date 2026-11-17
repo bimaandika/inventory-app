@@ -63,7 +63,7 @@ cp .env.example .env      # sesuaikan DB_* dan JWT_SECRET
 npm install
 npm run db:create         # buat database sesuai DB_NAME (lewati jika sudah ada)
 npm run migrate           # buat semua tabel dari migrations/
-npm run seed              # 5 site (GMG, POMS, GEG, FOL, TRK) + akun admin pusat
+npm run seed              # 5 site + admin pusat + data sample (kategori & 10 barang)
 npm run dev               # http://localhost:5050/api
 ```
 
@@ -73,6 +73,7 @@ Perintah database lain:
 
 | Perintah | Fungsi |
 |---|---|
+| `npm run seed:sample` | Isi ulang data sample kategori & barang saja |
 | `npm run migrate:undo` | Batalkan migrasi terakhir |
 | `npm run db:reset` | Hapus semua tabel, migrasi ulang, lalu seed (**semua data hilang**) |
 | `npx sequelize-cli migration:generate --name nama-migrasi` | Buat file migrasi baru |

@@ -12,6 +12,7 @@
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "migrate:undo:all": "sequelize-cli db:migrate:undo:all",
     "seed": "sequelize-cli db:seed:all",
+    "seed:sample": "sequelize-cli db:seed --seed 20261117000003-seed-sample-inventories.js",
     "db:reset": "sequelize-cli db:migrate:undo:all && sequelize-cli db:migrate && sequelize-cli db:seed:all"
   },
   "dependencies": {
