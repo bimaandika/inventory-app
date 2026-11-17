@@ -45,4 +45,4 @@ Setiap site punya admin site masing-masing. Admin pusat dibutuhkan, misalnya saa
 
 ## Nomor transaksi
 
-Format nomor transaksi untuk semua case (permintaan, barang masuk, transfer, peminjaman, adjustment/opname) **ditentukan oleh Bima**, seperti format SKU. Contoh di dokumen case bersifat sementara.
+Format nomor transaksi untuk semua case: lihat [Format nomor transaksi](nomor-transaksi.md).

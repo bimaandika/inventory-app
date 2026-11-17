@@ -40,7 +40,7 @@ Admin site asal / pusat           Site asal (GMG)     Site tujuan (TRK)     Admi
 2. Satu transfer = **satu site asal + satu site tujuan**, boleh berisi **banyak barang**.
 3. Jumlah per barang tidak boleh melebihi **stok tersedia** di site asal. Boleh memindahkan sebagian (misal 2 dari 5).
 4. Alasan berupa **teks bebas**.
-5. Nomor transfer: contoh `TRF-GMG-TRK-20261112-001`. *(format sementara — format final ditentukan Bima)*
+5. Nomor transfer: `TF-<site pengirim>-<MMYY>-<nomor>`, contoh `TF-GMG-1126-001` (lihat [Format nomor transaksi](nomor-transaksi.md)).
 
 ### Barang di site tujuan
 6. Jika site tujuan **sudah punya barang dengan nama yang sama** (tidak peka huruf besar/kecil) → stok **ditambahkan** ke barang tersebut.

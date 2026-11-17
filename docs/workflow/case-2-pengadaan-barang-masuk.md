@@ -27,7 +27,7 @@ Admin                                                         Stok
 
 ### Transaksi
 1. **Satu transaksi = satu site**, boleh berisi **beberapa barang** (barang baru dan barang yang sudah ada boleh dicampur).
-2. Nomor transaksi: contoh `IN-GMG-20261112-001`. *(format sementara — format final ditentukan Bima)*
+2. Nomor transaksi: `IN-<site>-<MMYY>-<nomor>`, contoh `IN-GMG-1126-001` (lihat [Format nomor transaksi](nomor-transaksi.md)).
 3. **Remarks berupa teks bebas** (misal: "Pengadaan SCM PO-123", "Petty cash, nota Toko Maju"). Belum dibuat kolom terstruktur.
 4. Tidak ada approval: transaksi langsung tercatat dan stok langsung bertambah.
 

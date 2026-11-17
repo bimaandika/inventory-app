@@ -56,7 +56,7 @@ Crew                              Admin                               Stok
 
 ### Checkout
 8. Alasan berupa **pilihan** (Pemakaian harian / Perbaikan / Proyek / Lainnya) **+ catatan bebas**.
-9. Nomor permintaan: contoh `REQ-GMG-20261111-001`. *(format sementara — format final ditentukan Bima)*
+9. Nomor permintaan: `UTIL-<site>-<MMYY>-<nomor>`, contoh `UTIL-GMG-1126-001`. Pengembalian memakai nomor yang sama + akhiran `-R1`, `-R2`, … (lihat [Format nomor transaksi](nomor-transaksi.md)).
 10. Crew bisa **membatalkan** selama status masih `PENDING`.
 
 ### Persetujuan (admin)

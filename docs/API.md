@@ -94,4 +94,4 @@ Endpoint transaksi (keranjang, permintaan, pengembalian, barang masuk, transfer,
 - aturan bisnis di `docs/workflow/`
 - struktur data di `docs/erd.md` (tabel `stock_movements`, `stock_movement_items`, `histories`)
 
-Format nomor transaksi menunggu keputusan Bima.
+Format nomor transaksi: `docs/workflow/nomor-transaksi.md`.

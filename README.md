@@ -105,3 +105,4 @@ Keputusan alur kerja ada di `docs/workflow/`:
 | `case-3-pemindahan-inventory.md` | Transfer permanen antar site |
 | `case-3b-peminjaman-antar-site.md` | Peminjaman antar site |
 | `case-4-adjustment-stock-opname.md` | Adjustment harian & stock opname |
+| `nomor-transaksi.md` | Format nomor semua transaksi |

@@ -114,7 +114,7 @@ Admin site                                          Admin pusat
 19. **Riwayat opname** per site tersimpan; laporan bisa diunduh ulang kapan saja.
 
 #### Nomor transaksi
-20. Nomor adjustment dan opname: **format ditentukan Bima** (lihat [Peran & hak akses](peran-hak-akses.md#nomor-transaksi)).
+20. Nomor adjustment: `ADJ-<site>-<MMYY>-<nomor>` (contoh `ADJ-GMG-1126-001`). Nomor opname: `OPNAME-<ET/SM>-<site>-<MMYY>-<nomor>` (contoh `OPNAME-SM-GMG-1126-001`). Lihat [Format nomor transaksi](nomor-transaksi.md).
 
 ## Dampak teknis (rancangan awal, difinalkan saat coding)
 
