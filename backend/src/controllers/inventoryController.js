@@ -114,7 +114,13 @@ async function list(req, res) {
     distinct: true,
   });
 
-  res.json(paginated(rows, count, pagination));
+  const filtered = Boolean(search || req.query.category_id || type || (!isCrew && req.query.site_id));
+  res.json(
+    paginated(rows, count, pagination, {
+      empty: isCrew ? 'Belum ada barang di site Anda' : 'Belum ada data barang',
+      emptyFiltered: 'Tidak ada barang yang cocok dengan pencarian atau filter',
+    }, filtered),
+  );
 }
 
 /** GET /api/inventories/:id */

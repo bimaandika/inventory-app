@@ -1,6 +1,6 @@
 const { Site, User, Inventory } = require('../models');
 const { badRequest, notFound, forbidden, conflict } = require('../helpers/httpError');
-const { parseId, requireString } = require('../helpers/validate');
+const { parseId, requireString, listResponse } = require('../helpers/validate');
 const { canViewSite } = require('../middlewares/auth');
 
 /*
@@ -28,7 +28,7 @@ async function findSite(id) {
 async function list(req, res) {
   const where = req.user.role === 'crew' ? { id: req.user.site_id } : {};
   const sites = await Site.findAll({ where, order: [['name', 'ASC']] });
-  res.json({ data: sites });
+  res.json(listResponse(sites, { empty: 'Belum ada data site' }));
 }
 
 /** GET /api/sites/:id — termasuk jumlah user & barang di site tersebut. */

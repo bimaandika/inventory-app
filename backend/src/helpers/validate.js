@@ -47,9 +47,32 @@ function parsePagination(query) {
   return { page, limit, offset: (page - 1) * limit };
 }
 
-/** Bentuk response daftar ber-pagination. */
-function paginated(rows, count, { page, limit }) {
-  return { data: rows, meta: { page, limit, total: count, total_pages: Math.ceil(count / limit) } };
+/**
+ * Pesan untuk daftar yang kosong. `data` tetap dikirim sebagai [] supaya
+ * frontend selalu bisa membaca response.data tanpa pengecekan tambahan.
+ * - filtered : true jika ada pencarian/filter aktif
+ */
+function emptyMessage({ empty, emptyFiltered }, filtered) {
+  return filtered && emptyFiltered ? emptyFiltered : empty;
+}
+
+/** Response daftar biasa (tanpa pagination). Menambahkan `message` jika kosong. */
+function listResponse(rows, messages, filtered = false) {
+  if (rows.length > 0) return { data: rows };
+  return { message: emptyMessage(messages, filtered), data: rows };
+}
+
+/** Response daftar ber-pagination. Menambahkan `message` jika kosong. */
+function paginated(rows, count, { page, limit }, messages, filtered = false) {
+  const totalPages = Math.ceil(count / limit);
+  const body = { data: rows, meta: { page, limit, total: count, total_pages: totalPages } };
+  if (rows.length > 0) return body;
+
+  const message =
+    count > 0
+      ? `Halaman ${page} kosong; total halaman hanya ${totalPages}`
+      : emptyMessage(messages, filtered);
+  return { message, ...body };
 }
 
 module.exports = {
@@ -59,5 +82,6 @@ module.exports = {
   parseNonNegativeInt,
   parseBoolean,
   parsePagination,
+  listResponse,
   paginated,
 };

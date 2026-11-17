@@ -1,7 +1,7 @@
 const { Op, fn, col } = require('sequelize');
 const { Category, Inventory } = require('../models');
 const { notFound } = require('../helpers/httpError');
-const { parseId, requireString } = require('../helpers/validate');
+const { parseId, requireString, listResponse } = require('../helpers/validate');
 
 /* Lihat: semua peran. Kelola: admin pusat (diatur di routes). */
 
@@ -24,9 +24,13 @@ async function list(req, res) {
     order: [['name', 'ASC']],
   });
 
-  res.json({
-    data: categories.map((c) => ({ ...c.toJSON(), total_items: Number(c.get('total_items')) })),
-  });
+  const rows = categories.map((c) => ({ ...c.toJSON(), total_items: Number(c.get('total_items')) }));
+  res.json(
+    listResponse(rows, {
+      empty: 'Belum ada data kategori',
+      emptyFiltered: 'Tidak ada kategori yang cocok dengan pencarian',
+    }, Boolean(search)),
+  );
 }
 
 /** GET /api/categories/:id */

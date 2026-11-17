@@ -8,6 +8,8 @@ Peran (lihat `docs/workflow/peran-hak-akses.md`):
 - **crew** = `crew` — hanya site sendiri
 - **semua** = ketiga peran di atas
 
+Daftar yang kosong tetap mengembalikan `data: []`, ditambah `message` yang menjelaskan alasannya, misal `"Belum ada data barang"` atau `"Tidak ada barang yang cocok dengan pencarian atau filter"`.
+
 Response objek barang & user menyertakan relasi bertingkat, misal `"site": { "id", "name", "code" }` dan `"category": { "id", "name" }`.
 
 Token hanya berisi `id` user; role, site, dan status aktif selalu dibaca ulang dari database di setiap request, sehingga perubahan langsung berlaku. User nonaktif ditolak (401).

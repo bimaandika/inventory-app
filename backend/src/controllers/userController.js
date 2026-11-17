@@ -91,7 +91,13 @@ async function list(req, res) {
     distinct: true,
   });
 
-  res.json(paginated(rows, count, pagination));
+  const filtered = Boolean(search || req.query.role || req.query.site_id);
+  res.json(
+    paginated(rows, count, pagination, {
+      empty: 'Belum ada data user',
+      emptyFiltered: 'Tidak ada user yang cocok dengan pencarian atau filter',
+    }, filtered),
+  );
 }
 
 /** GET /api/users/:id */
